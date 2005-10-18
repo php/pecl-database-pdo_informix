@@ -26,7 +26,7 @@
    Initial version of PDO_IDS driver for PDO.
   </notes>
   <configureoptions>
-   <configureoption name="with-pdo-ids" prompt="Informix Client SDK location?" />
+   <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
   </configureoptions>
   <filelist>
    <dir name="/" baseinstalldir="pdo_ids" role="src">
