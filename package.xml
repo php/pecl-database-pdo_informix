@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<package version="1.0">
+ <name>PDO_IDS</name>
+ <summary>PDO driver for IBM Informix IDS databases</summary>
+ <description>
+  This extension provides an IBM Informix IDS driver for PDO. To build and run
+  PDO_IDS, you must install the Informix Client Software Development Kit (CSDK)
+  from http://ibm.com/informix/downloads.html.
+ </description>
+ <license>Apache License 2.0</license>
+ <maintainers>
+  <maintainer>
+   <user>dbs</user>
+   <name>Dan Scott</name>
+   <email>dan.scott@ca.ibm.com</email>
+   <role>lead</role>
+  </maintainer>
+ </maintainers>
+
+ <release>
+  <version>0.1</version>
+  <date>2005-10-17</date>
+  <license>Apache License 2.0</license>
+  <state>alpha</state>
+  <notes>
+   Initial version of PDO_IDS driver for PDO.
+  </notes>
+  <configureoptions>
+   <configureoption name="with-pdo-ids" prompt="Informix Client SDK location?" />
+  </configureoptions>
+  <filelist>
+   <dir name="/" baseinstalldir="pdo_ids" role="src">
+    <file name="CREDITS" role="doc" />
+    <file name="EXPERIMENTAL" role="doc" />
+    <file name="Makefile.frag" role="src" />
+    <file name="config.m4" role="src" />
+    <file name="config.w32" role="src" />
+    <file name="informix_driver.c" role="src" />
+    <file name="informix_statement.c" role="src" />
+    <file name="package.xml" role="src" />
+    <file name="pdo_informix.c" role="src" />
+    <file name="php_pdo_informix.h" role="src" />
+    <file name="php_pdo_informix_int.h" role="src" />
+   </dir>
+   <dir name="tests" role="test">
+    <file name="TESTMATRIX" role="doc" />
+    <file name="fvt.inc" role="test" />
+    <file name="fvt_001.phpt" role="test" />
+    <file name="fvt_002.phpt" role="test" />
+    <file name="fvt_003.phpt" role="test" />
+    <file name="fvt_004.phpt" role="test" />
+    <file name="fvt_010.phpt" role="test" />
+    <file name="fvt_011.phpt" role="test" />
+    <file name="fvt_012.phpt" role="test" />
+    <file name="fvt_013.phpt" role="test" />
+    <file name="fvt_014.phpt" role="test" />
+    <file name="fvt_020.phpt" role="test" />
+    <file name="fvt_021.phpt" role="test" />
+    <file name="fvt_030.phpt" role="test" />
+    <file name="fvt_031.phpt" role="test" />
+    <file name="skipif.inc" role="test" />
+   </dir>
+  </filelist>
+ </release>
+</package>
