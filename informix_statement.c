@@ -62,7 +62,7 @@ static void stmt_free_column_descriptors(pdo_stmt_t *stmt TSRMLS_DC)
 // cleanup any driver-allocated control blocks attached to a statement
 // instance.  This cleans up the driver_data control block, as 
 // well as any temporary allocations used during execution. 
-void stmt_cleanup(pdo_stmt_t *stmt)
+void stmt_cleanup(pdo_stmt_t *stmt TSRMLS_DC)
 {
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
     if (stmt_res != NULL)
@@ -76,7 +76,7 @@ void stmt_cleanup(pdo_stmt_t *stmt)
             efree(stmt_res->lob_buffer);
         }
         // free any descriptors we're keeping active
-        stmt_free_column_descriptors(stmt);
+        stmt_free_column_descriptors(stmt TSRMLS_CC);
         efree(stmt_res);
     }
     stmt->driver_data = NULL;
@@ -86,6 +86,8 @@ void stmt_cleanup(pdo_stmt_t *stmt)
 static int stmt_get_parameter_info(pdo_stmt_t *stmt, struct pdo_bound_param_data *param TSRMLS_DC)
 {
     param_node *param_res = (param_node *)param->driver_data;
+	stmt_handle *stmt_res = NULL;
+	int rc = 0;
 
     // do we have the parameter information yet?
     if (param_res == NULL)
@@ -95,10 +97,10 @@ static int stmt_get_parameter_info(pdo_stmt_t *stmt, struct pdo_bound_param_data
         check_stmt_allocation(param_res, "stmt_get_parameter", "Unable to allocate parameter driver data");
 
         // get the statement specifics
-        stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
+        stmt_res = (stmt_handle *)stmt->driver_data;
         // NB:  The PDO parameter numbers are origin zero, but the SQLDescribeParam()
         // ones start with 1.
-        int rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, param->paramno + 1, &param_res->data_type,
+        rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, param->paramno + 1, &param_res->data_type,
             &param_res->param_size, &param_res->scale, &param_res->nullable);
         check_stmt_error(rc, "SQLDescribeParam");
 
@@ -140,6 +142,8 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 {
 	int rc;
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
+	param_node *param_res = NULL;
+	SQLSMALLINT inputOutputType;
 
     // make sure we have current description information.
     if (stmt_get_parameter_info(stmt, curr TSRMLS_CC) == FALSE)
@@ -147,12 +151,10 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
         return FALSE;
     }
 
-    param_node *param_res = (param_node *)curr->driver_data;
+    param_res = (param_node *)curr->driver_data;
 
     // now figure out the parameter type so we can tell the database code 
     // how to handle this. 
-    SQLSMALLINT inputOutputType;
-    
     // this is rare, really only used for stored procedures. 
     if (curr->param_type & PDO_PARAM_INPUT_OUTPUT > 0)
     {
@@ -381,7 +383,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
     // access the information for this column
     column_data *col_res = &stmt_res->columns[colno];
-
+	struct pdo_column_data *col = NULL;
 	char tmp_name[BUFSIZ];
 
     // get the column descriptor information 
@@ -413,7 +415,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
         check_stmt_allocation(col_res->name, "stmt_bind_column", "Unable to allocate column name");
     }
 
-    struct pdo_column_data *col = &stmt->columns[colno];
+    col = &stmt->columns[colno];
 
     // copy the information back into the PDO control block.  Note that 
     // PDO will release the name information, so we don't have to. 
@@ -522,7 +524,7 @@ int informix_stmt_dtor( pdo_stmt_t *stmt TSRMLS_DC)
 			stmt_res->hstmt = SQL_NULL_HANDLE;
         }
         // release an control blocks we have attached to this statement
-        stmt_cleanup(stmt);
+        stmt_cleanup(stmt TSRMLS_CC);
     }
 	return TRUE;
 }
@@ -534,12 +536,14 @@ static int informix_stmt_executer(
     TSRMLS_DC)
 {
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
-	
+	int rc = 0;
+	SQLINTEGER rowCount;
+
 	// if this statement has already been executed, then we need to 
 	// cancel the previous execution before doing this again. 
 	if (stmt->executed) 
 	{
-        int rc = SQLFreeStmt( stmt_res->hstmt , SQL_CLOSE );
+        rc = SQLFreeStmt( stmt_res->hstmt , SQL_CLOSE );
         check_stmt_error(rc, "SQLFreeStmt");
 	}	
     // we're executing now...this tells error handling to Cancel if there's an error.
@@ -549,7 +553,7 @@ static int informix_stmt_executer(
 	stmt_res->lob_buffer = NULL; 
     // Execute the statement.  All parameters should be bound at this point, 
     // but we might need to pump data in for some of the parameters. 
-    int rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
+    rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
     check_stmt_error(rc, "SQLExecute");
 	// now check if we have indirectly bound parameters.  If we do, then we 
     // need to push the data for those parameters into the processing pipe. 
@@ -618,8 +622,6 @@ static int informix_stmt_executer(
     // now set the rowcount field in the statement.  This will be the 
     // number of rows affected by the SQL statement, not the number of 
     // rows in the result set. 
-    SQLINTEGER rowCount;
-    
     rc = SQLRowCount(stmt_res->hstmt, &rowCount);
     check_stmt_error(rc, "SQLRowCount");
     // store the affected rows information. 
@@ -628,7 +630,7 @@ static int informix_stmt_executer(
     // is this the first time we've executed this statement?
     if (!stmt->executed)
     {
-        if (stmt_allocate_column_descriptors(stmt) == FALSE)
+        if (stmt_allocate_column_descriptors(stmt TSRMLS_CC) == FALSE)
         {
             return FALSE;
         }
@@ -650,6 +652,7 @@ static int informix_stmt_fetcher(
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
     // by default, we're just fetching the next one
     SQLSMALLINT direction = SQL_FETCH_NEXT;
+	int rc = 0;
 
     // convert the PDO orientation information to the 
     // SQL one. 
@@ -676,7 +679,7 @@ static int informix_stmt_fetcher(
     }
 
     // go fetch it. 
-    int rc = SQLFetchScroll(stmt_res->hstmt, direction, (SQLINTEGER)offset);
+    rc = SQLFetchScroll(stmt_res->hstmt, direction, (SQLINTEGER)offset);
     check_stmt_error(rc, "SQLFetchScroll");
 
 	// The fetcher() routine has an overloaded return value.  A false return 
@@ -722,11 +725,11 @@ static int informix_stmt_param_hook(
 
             case PDO_PARAM_EVT_EXEC_PRE:
                 // we're allocating a bound parameter, go do the binding
-                stmt_bind_parameter(stmt, param);
-                return stmt_parameter_pre_execute(stmt, param);
+                stmt_bind_parameter(stmt, param TSRMLS_CC);
+                 return stmt_parameter_pre_execute(stmt, param TSRMLS_CC);
 
             case PDO_PARAM_EVT_EXEC_POST:
-                return stmt_parameter_post_execute(stmt, param);
+                return stmt_parameter_post_execute(stmt, param TSRMLS_CC);
 
             // parameters aren't processed at the fetch phase.
             case PDO_PARAM_EVT_FETCH_PRE:
@@ -744,7 +747,7 @@ static int informix_stmt_describer(
 	TSRMLS_DC)
 {
     // get the descriptor information and bind to the column location
-    return stmt_bind_column(stmt, colno);
+    return stmt_bind_column(stmt, colno TSRMLS_CC);
 }
 
 // fetch the data for a specific column.  This should be sitting in our 
@@ -766,7 +769,7 @@ static int informix_stmt_get_col(
     if (col_res->out_length == SQL_NULL_DATA)
     {
         // return this as a real null
-        *ptr == NULL;
+        *ptr = NULL;
         *len = 0;
     }
     // string type...very common
@@ -807,9 +810,9 @@ static int informix_stmt_next_rowset(
 
     // the next result set may have different column information, so 
 	// we need to clear out our existing set. 
-	stmt_free_column_descriptors(stmt); 
+	stmt_free_column_descriptors(stmt TSRMLS_CC); 
 	// now allocate a new set of column descriptors
-	if (stmt_allocate_column_descriptors(stmt) == FALSE)
+	if (stmt_allocate_column_descriptors(stmt TSRMLS_CC) == FALSE)
     {
 		return FALSE;
     }
@@ -825,25 +828,28 @@ static int informix_stmt_get_column_meta(
     zval *return_value 
     TSRMLS_DC)
 {
-    if (colno >= stmt->column_count) 
+	stmt_handle *stmt_res = NULL;
+    column_data *col_res = NULL;
+
+	#define ATTRIBUTEBUFFERSIZE 256 
+    char attribute_buffer[ATTRIBUTEBUFFERSIZE]; 
+    SQLSMALLINT length; 
+    SQLINTEGER numericAttribute; 
+	zval *flags;
+
+	if (colno >= stmt->column_count) 
     {
         RAISE_IFX_STMT_ERROR("HY097", "getColumnMeta", "Column number out of range"); 
         return FAILURE; 
     }        
     
-    stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
+    stmt_res = (stmt_handle *)stmt->driver_data;
     // access our look aside data
-    column_data *col_res = &stmt_res->columns[colno];
+    col_res = &stmt_res->columns[colno];
     
         // make sure the return value is initialized as an array. 
     array_init(return_value);  
     add_assoc_long(return_value, "scale", col_res->scale); 
-    
-#define ATTRIBUTEBUFFERSIZE 256 
-    
-    char attribute_buffer[ATTRIBUTEBUFFERSIZE]; 
-    SQLSMALLINT length; 
-    SQLINTEGER numericAttribute; 
         
     // see if we can retrieve the table name 
     if (SQLColAttribute(stmt_res->hstmt, colno + 1, SQL_DESC_BASE_TABLE_NAME, 
@@ -864,8 +870,7 @@ static int informix_stmt_get_column_meta(
     {
         add_assoc_stringl(return_value, "native_type", attribute_buffer, length, 1); 
     }        
-    
-    zval *flags; 
+     
     MAKE_STD_ZVAL(flags); 
     array_init(flags); 
     
@@ -939,7 +944,8 @@ static int informix_stmt_set_attribute(
     TSRMLS_DC)
 {
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
-    
+    int rc = 0;
+
     switch (attr) 
     {
         case PDO_ATTR_CURSOR_NAME:
@@ -947,7 +953,7 @@ static int informix_stmt_set_attribute(
             // we need to force this to a string value    
             convert_to_string(value);   
             // set the cursor value
-            int rc = SQLSetCursorName(stmt_res->hstmt, 
+            rc = SQLSetCursorName(stmt_res->hstmt, 
                 Z_STRVAL_P(value), Z_STRLEN_P(value)); 
             check_stmt_error(rc, "SQLSetCursorName"); 
             return TRUE;

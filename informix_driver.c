@@ -63,6 +63,7 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
     conn_handle *conn_res = (conn_handle *)dbh->driver_data;
     stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
     int rc;
+    SQLSMALLINT param_count;
 
     // in case we need to convert the statement for positional syntax
     int converted_len = 0;
@@ -123,7 +124,6 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
         stmt_res->converted_statement = NULL;
     }
 
-    SQLSMALLINT param_count;
     rc = SQLNumResultCols((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT*)&param_count);
     check_stmt_error(rc, "SQLNumResultCols");
 
@@ -228,12 +228,12 @@ static int informix_handle_preparer(
     conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 
     // allocate new driver_data structure
-    if (dbh_new_stmt_data(dbh, stmt) == TRUE)
+    if (dbh_new_stmt_data(dbh, stmt TSRMLS_CC) == TRUE)
     {
         /* Allocates the stmt handle */
         /* Prepares the statement */
         /* returns the stat_handle back to the calling function */
-        return dbh_prepare_stmt(dbh, stmt, sql, sql_len, driver_options);
+        return dbh_prepare_stmt(dbh, stmt, sql, sql_len, driver_options TSRMLS_CC);
     }
     return FALSE;
 }
@@ -247,7 +247,7 @@ static long informix_handle_doer(
 {
     conn_handle *conn_res = (conn_handle *)dbh->driver_data;
     SQLHANDLE hstmt;
-
+	SQLINTEGER rowCount;
     // get a statement handle
     int rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
     check_dbh_error(rc, "SQLAllocHandle");
@@ -267,7 +267,6 @@ static long informix_handle_doer(
     }
     
     // we need to update the number of affected rows. 
-    SQLINTEGER rowCount;
     rc = SQLRowCount(hstmt, &rowCount);
     if (rc == SQL_ERROR)
     {
@@ -301,8 +300,10 @@ static int informix_handle_commit(
 
     int rc = SQLEndTran(SQL_HANDLE_DBC, conn_res->hdbc, SQL_COMMIT);
     check_dbh_error(rc, "SQLEndTran");
-    rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
-    check_dbh_error(rc, "SQLSetConnectAttr");
+    if (dbh->auto_commit != 0){
+        rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
+        check_dbh_error(rc, "SQLSetConnectAttr");
+    }
     return TRUE;
 }
 
@@ -314,8 +315,10 @@ static int informix_handle_rollback(
 
     int rc = SQLEndTran(SQL_HANDLE_DBC, conn_res->hdbc, SQL_ROLLBACK);
     check_dbh_error(rc, "SQLEndTran");
-    rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
-    check_dbh_error(rc, "SQLSetConnectAttr");
+    if (dbh->auto_commit != 0){
+        rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
+        check_dbh_error(rc, "SQLSetConnectAttr");
+    }
     return TRUE;
 }
 
@@ -411,16 +414,8 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
     rc = SQLAllocHandle( SQL_HANDLE_DBC, conn_res->henv, &(conn_res->hdbc));
     check_dbh_error(rc, "SQLAllocHandle");
 
-    // if we're in auto commit mode, set the connection attribute.
-    if (dbh->auto_commit != 0)
-    {
-        rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS);
-        check_dbh_error(rc, "SQLSetConnectAttr");
-    }
-
     //NB:  We don't have any specific driver options we support at this time, so
     //  we don't need to do any option parsing.
-
     // If the string contains a =, then we need to use SQLDriverConnect to make the
     // connection.  This may require reform  var_dump($rows);atting the DSN string to include a userid and
     // password.
@@ -458,6 +453,26 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
             (SQLCHAR *)dbh->password, (SQLSMALLINT)strlen(dbh->password));
         check_dbh_error(rc, "SQLConnect");
     }
+
+    /*
+       //trace odbc calls
+       char* file="/home/ramankr/odbc.trace";
+       rc = SQLSetConnectAttr (conn_res->hdbc, SQL_ATTR_TRACE, (SQLPOINTER) SQL_OPT_TRACE_ON,(SQLINTEGER) NULL);
+       check_dbh_error(rc, "SQLSetConnectAttr");
+       rc = SQLSetConnectAttr (conn_res->hdbc, SQL_ATTR_TRACEFILE, (SQLPOINTER) file,(SQLINTEGER) strlen(file));
+       check_dbh_error(rc, "SQLSetConnectAttr");
+    */
+
+    //SQLSetConnectAttr (conn_res->hdbc, SQL_ATTR_TRACEFILE, (SQLPOINTER) "/home/ramankr/odbc.log", SQL_NTS);
+    // if we're in auto commit mode, set the connection attribute.
+    if (dbh->auto_commit != 0)
+    {
+        rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS);
+        check_dbh_error(rc, "SQLSetConnectAttr");
+    }else{
+        rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_NTS);
+        check_dbh_error(rc, "SQLSetConnectAttr");
+    }
   
     dbh->native_case = PDO_CASE_LOWER; 
     dbh->desired_case = PDO_CASE_UPPER;
@@ -477,7 +492,7 @@ static int informix_handle_factory(
     TSRMLS_DC)
 {
     // go do the connection
-    return dbh_connect( dbh, driver_options);
+    return dbh_connect( dbh, driver_options TSRMLS_CC);
 }   
 
 pdo_driver_t pdo_informix_driver = 
@@ -535,7 +550,7 @@ void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle,
     conn_res->error_data.err_msg[length] = '\0';
 
     // now go tell PDO about this problem
-    process_pdo_error(dbh, stmt TSRMLS_DC);
+    process_pdo_error(dbh, stmt TSRMLS_CC);
 }
 
 // raise a driver-detected error.  This is a faked-SQL type error, using a provided 
@@ -553,7 +568,7 @@ void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *t
     strcpy(conn_res->error_data.sql_state, state);
     conn_res->error_data.sqlcode = 1;            // just give a non-zero code state.
     // now go tell PDO about this problem
-    process_pdo_error(dbh, stmt TSRMLS_DC);
+    process_pdo_error(dbh, stmt TSRMLS_CC);
 }
 
 // raise an error in a connection context.  This ensures we use the 
@@ -561,7 +576,7 @@ void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *t
 void raise_dbh_error(pdo_dbh_t *dbh, char *tag, char *file, int line TSRMLS_DC)
 {
     conn_handle *conn_res = (conn_handle *)dbh->driver_data;
-    raise_sql_error(dbh, NULL, conn_res->hdbc, SQL_HANDLE_DBC, tag, file, line TSRMLS_DC);
+    raise_sql_error(dbh, NULL, conn_res->hdbc, SQL_HANDLE_DBC, tag, file, line TSRMLS_CC);
 }
 
 // raise an error in a statement context.  This ensures we use the correct 
@@ -580,14 +595,14 @@ void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line TSRMLS_D
         if (stmt_res->lob_buffer != NULL)
         {
             efree(stmt_res->lob_buffer);
-            stmt_res->lob_buffer == NULL;
+            stmt_res->lob_buffer = NULL;
         }
         if (stmt_res->converted_statement != NULL) 
         {
             efree(stmt_res->converted_statement);
-            stmt_res->converted_statement == NULL; 
+            stmt_res->converted_statement = NULL; 
         }            
         stmt_res->executing = 0;
     }
-    raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_DC);
+    raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
 }
