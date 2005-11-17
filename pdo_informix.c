@@ -21,7 +21,7 @@
 
 /* $Id$ */
 #ifdef HAVE_CONFIG_H
-    #include "config.h"
+	#include "config.h"
 #endif
 
 #include "php.h"
@@ -43,10 +43,10 @@ extern pdo_driver_t pdo_informix_driver;   // the registration table
  * Every user visible function must have an entry in pdo_informix_functions[].
  */
 function_entry pdo_informix_functions[] = {
-    PHP_FE(confirm_pdo_informix_compiled,   NULL)           /* For testing, remove later. */
-    {
-        NULL, NULL, NULL
-    }      /* Must be the last line in pdo_informix_functions[] */
+	PHP_FE(confirm_pdo_informix_compiled,   NULL)           /* For testing, remove later. */
+	{
+		NULL, NULL, NULL
+	}      /* Must be the last line in pdo_informix_functions[] */
 };
 /* }}} */
 
@@ -54,19 +54,19 @@ function_entry pdo_informix_functions[] = {
  */
 zend_module_entry pdo_informix_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
-    STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER,
 #endif
-    "pdo_informix",
-    pdo_informix_functions,
-    PHP_MINIT(pdo_informix),
-    PHP_MSHUTDOWN(pdo_informix),
-    PHP_RINIT(pdo_informix),                /* Replace with NULL if there's nothing to do at request start */
-    PHP_RSHUTDOWN(pdo_informix),    /* Replace with NULL if there's nothing to do at request end */
-    PHP_MINFO(pdo_informix),
+	"pdo_informix",
+	pdo_informix_functions,
+	PHP_MINIT(pdo_informix),
+	PHP_MSHUTDOWN(pdo_informix),
+	PHP_RINIT(pdo_informix),                /* Replace with NULL if there's nothing to do at request start */
+	PHP_RSHUTDOWN(pdo_informix),    /* Replace with NULL if there's nothing to do at request end */
+	PHP_MINFO(pdo_informix),
 #if ZEND_MODULE_API_NO >= 20010901
-    "0.1", /* Replace with version number for your extension */
+	"0.1", /* Replace with version number for your extension */
 #endif
-    STANDARD_MODULE_PROPERTIES
+	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
 
@@ -78,8 +78,8 @@ ZEND_GET_MODULE(pdo_informix)
  */
 /* Remove comments and fill if you need to have entries in php.ini
 PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("pdo_informix.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_pdo_informix_globals, pdo_informix_globals)
-    STD_PHP_INI_ENTRY("pdo_informix.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_pdo_informix_globals, pdo_informix_globals)
+	STD_PHP_INI_ENTRY("pdo_informix.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_pdo_informix_globals, pdo_informix_globals)
+	STD_PHP_INI_ENTRY("pdo_informix.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_pdo_informix_globals, pdo_informix_globals)
 PHP_INI_END()
 */
 /* }}} */
@@ -89,23 +89,23 @@ PHP_INI_END()
 /* Uncomment this function if you have INI entries
 static void php_pdo_informix_init_globals(zend_pdo_informix_globals *pdo_informix_globals)
 {
-        pdo_informix_globals->global_value = 0;
-        pdo_informix_globals->global_string = NULL;
+		pdo_informix_globals->global_value = 0;
+		pdo_informix_globals->global_string = NULL;
 }
 */
 /* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION
  */
-    PHP_MINIT_FUNCTION(pdo_informix)
+	PHP_MINIT_FUNCTION(pdo_informix)
 {
-    /* If you have INI entries, uncomment these lines
-    ZEND_INIT_MODULE_GLOBALS(pdo_informix, php_pdo_informix_init_globals, NULL);
-    REGISTER_INI_ENTRIES();
-    */
+	/* If you have INI entries, uncomment these lines
+	ZEND_INIT_MODULE_GLOBALS(pdo_informix, php_pdo_informix_init_globals, NULL);
+	REGISTER_INI_ENTRIES();
+	*/
 	
-    php_pdo_register_driver(&pdo_informix_driver);
-    return TRUE;  
+	php_pdo_register_driver(&pdo_informix_driver);
+	return TRUE;  
 }
 /* }}} */
 
@@ -113,12 +113,12 @@ static void php_pdo_informix_init_globals(zend_pdo_informix_globals *pdo_informi
  */
 PHP_MSHUTDOWN_FUNCTION(pdo_informix)
 {
-    /* uncomment this line if you have INI entries
-    UNREGISTER_INI_ENTRIES();
-    */
+	/* uncomment this line if you have INI entries
+	UNREGISTER_INI_ENTRIES();
+	*/
 	 
-    php_pdo_unregister_driver(&pdo_informix_driver);
-    return TRUE;
+	php_pdo_unregister_driver(&pdo_informix_driver);
+	return TRUE;
 }
 /* }}} */
 
@@ -127,7 +127,7 @@ PHP_MSHUTDOWN_FUNCTION(pdo_informix)
  */
 PHP_RINIT_FUNCTION(pdo_informix)
 {
-    return TRUE;
+	return TRUE;
 }
 /* }}} */
 
@@ -136,7 +136,7 @@ PHP_RINIT_FUNCTION(pdo_informix)
  */
 PHP_RSHUTDOWN_FUNCTION(pdo_informix)
 {
-    return TRUE;
+	return TRUE;
 }
 /* }}} */
 
@@ -144,13 +144,13 @@ PHP_RSHUTDOWN_FUNCTION(pdo_informix)
  */
 PHP_MINFO_FUNCTION(pdo_informix)
 {
-    php_info_print_table_start();
-    php_info_print_table_header(2, "pdo_informix support", "enabled");
-    php_info_print_table_end();
+	php_info_print_table_start();
+	php_info_print_table_header(2, "pdo_informix support", "enabled");
+	php_info_print_table_end();
 
-    /* Remove comments if you have entries in php.ini
-    DISPLAY_INI_ENTRIES();
-    */
+	/* Remove comments if you have entries in php.ini
+	DISPLAY_INI_ENTRIES();
+	*/
 }
 /* }}} */
 
@@ -164,17 +164,17 @@ PHP_MINFO_FUNCTION(pdo_informix)
    Return a string to confirm that the module is compiled in */
 PHP_FUNCTION(confirm_pdo_informix_compiled)
 {
-    char *arg = NULL;
-    int arg_len, len;
-    char string[256];
+	char *arg = NULL;
+	int arg_len, len;
+	char string[256];
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FALSE)
-    {
-        return;
-    }
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FALSE)
+	{
+		return;
+	}
 
-    len = sprintf(string, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "pdo_informix", arg);
-    RETURN_STRINGL(string, len, 1);
+	len = sprintf(string, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "pdo_informix", arg);
+	RETURN_STRINGL(string, len, 1);
 }
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and
