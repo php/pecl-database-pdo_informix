@@ -14,19 +14,19 @@ pdo_informix: Tests all Fetch orientations
             $this->prepareDB();
             
             $stmt = $this->db->prepare( "SELECT id, breed, name, weight FROM animals ORDER BY id" , 
-                array( PDO_ATTR_CURSOR => PDO_CURSOR_SCROLL ) );
+                array( PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL ) );
             $stmt->execute();
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_FIRST );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_FIRST );
             var_dump( $row );
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_NEXT );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_NEXT );
             var_dump( $row );
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_PRIOR );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_PRIOR );
             var_dump( $row );
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_LAST );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_LAST );
             var_dump( $row );
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_ABS , 2 );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_ABS , 2 );
             var_dump( $row );
-            $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_REL , 1 );
+            $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_REL , 1 );
             var_dump( $row );
 
             $stmt->closeCursor();

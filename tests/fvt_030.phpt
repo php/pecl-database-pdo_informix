@@ -11,7 +11,7 @@ pdo_informix: PDOStatement::fetch()
             $this->prepareDB();
             
             $stmt = $this->db->query( "SELECT id, breed, name, weight FROM animals WHERE id = 0" );
-            while( $row = $stmt->fetch( PDO_FETCH_BOTH ) ){
+            while( $row = $stmt->fetch( PDO::FETCH_BOTH ) ){
                 $breed = $row[1];
                 var_dump( $breed );
                 $name = $row["name"];

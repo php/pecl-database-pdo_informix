@@ -10,12 +10,12 @@ pdo_informix: Scrollable cursor; retrieve negative row
             $this->connect();
             $this->prepareDB();
 
-            $stmt = $this->db->prepare( "SELECT * FROM animals" , array(PDO_ATTR_CURSOR, PDO_CURSOR_SCROLL) );
+            $stmt = $this->db->prepare( "SELECT * FROM animals" , array(PDO::ATTR_CURSOR, PDO::CURSOR_SCROLL) );
             $stmt->execute();
             var_dump( $stmt->fetchAll() );
             $stmt->execute();
             try{
-                $row = $stmt->fetch( PDO_FETCH_BOTH , PDO_FETCH_ORI_ABS , -1 );
+                $row = $stmt->fetch( PDO::FETCH_BOTH , PDO::FETCH_ORI_ABS , -1 );
                 var_dump( $row );
             }catch( PDOException $e ){
                 $info = $stmt->errorInfo();

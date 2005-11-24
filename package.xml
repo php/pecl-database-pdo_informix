@@ -18,10 +18,10 @@
  </maintainers>
 
  <release>
-  <version>0.1</version>
-  <date>2005-10-17</date>
+  <version>0.2</version>
+  <date>2005-11-24</date>
   <license>Apache License 2.0</license>
-  <state>alpha</state>
+  <state>beta</state>
   <notes>
    Initial version of PDO_IDS driver for PDO.
   </notes>

@@ -24,11 +24,11 @@
                 $this->pass = $_pass;
         }
 
-        public function connect(){
-            $this->db = new PDO($this->dsn,$this->user,$this->pass);
-            $this->db->setAttribute(PDO_ATTR_ERRMODE, PDO_ERRMODE_EXCEPTION);
-            $this->db->setAttribute(PDO_ATTR_CASE, PDO_CASE_LOWER);
-            $this->db->setAttribute(PDO_ATTR_STRINGIFY_FETCHES, true);
+        public function connect($autoCommit=true){
+            $this->db = new PDO($this->dsn,$this->user,$this->pass,array( PDO::ATTR_AUTOCOMMIT => $autoCommit ));
+            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->db->setAttribute(PDO::ATTR_CASE, PDO::CASE_LOWER);
+            $this->db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, true);
             return $this->db;
         }
         

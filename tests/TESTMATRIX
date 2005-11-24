@@ -8,8 +8,8 @@ informix_handle_preparer        | prepare statement                 |   fvt_031
 informix_handle_doer            | query / execute / #rows affected  |   fvt_002,fvt_010,fvt_011,fvt_012,fvt_014
 informix_handle_begin           | begin transaction                 |   pdo_017
 informix_handle_commit          | commit transaction                |
-    -> with AUTOCOMMIT = 0      |                                   |   fvt_020
-    -> with AUTOCOMMIT = 1,begin|                                   |   
+    -> with AUTOCOMMIT = 0      |                                   |   fvt_023
+    -> with AUTOCOMMIT = 1,begin|                                   |   fvt_020
                                -+-                                 -+-
 informix_handle_rollback        | rollback transaction              |   
     -> with AUTOCOMMIT = 0      |                                   |   fvt_021
@@ -19,7 +19,7 @@ informix_handle_get_attribute   | get attributes                    |   fvt_020,
     -> ATTR_AUTOCOMMIT          |                                   |
     -> ATTR_PREFETCH            | (NO IMPL)                         |
     -> ATTR_TIMEOUT             | (NO IMPL)                         |
-    -> ATTR_SERVER_VERSION      | (NO IMPL)                         |
+    -> ATTR_SERVER_VERSION      | (NO IMPL)  <--                    |
     -> ATTR_CLIENT_VERSION      |                                   |
     -> ATTR_SERVER_INFO         | (NO IMPL)                         |
     -> ATTR_CONNECTION_STATUS   | (NO IMPL)                         |
