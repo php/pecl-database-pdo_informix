@@ -29,7 +29,7 @@
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
   </configureoptions>
   <filelist>
-   <dir name="/" baseinstalldir="pdo_ids" role="src">
+   <dir name="/" baseinstalldir="pdo_informix" role="src">
     <file name="CREDITS" role="doc" />
     <file name="EXPERIMENTAL" role="doc" />
     <file name="Makefile.frag" role="src" />
