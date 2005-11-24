@@ -56,6 +56,8 @@
     <file name="fvt_014.phpt" role="test" />
     <file name="fvt_020.phpt" role="test" />
     <file name="fvt_021.phpt" role="test" />
+    <file name="fvt_022.phpt" role="test" />
+    <file name="fvt_023.phpt" role="test" />
     <file name="fvt_030.phpt" role="test" />
     <file name="fvt_031.phpt" role="test" />
     <file name="skipif.inc" role="test" />
