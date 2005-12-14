@@ -25,6 +25,13 @@
   <notes>
    First stable version of PDO_INFORMIX driver for PDO.
    Note that on Windows, large objects (LOBs) are currently returned as long strings instead of streams.
+
+   Fixed issue where re-executing a statement would crash because column descriptors were being released at the wrong time.
+   Fixed the behavior of PDO transactions to comply with PDO spec.
+   Fixed bug where PDO::PARAM_LOB was not processed properly causing an exception when binding a string value to a varchar using PDO::PARAM_LOB
+   Fixed a bug which caused a crash when binding multiple stream based LOB parameters.
+   Fixed how text,binary,clob,blob fields are bound to columns.
+   Added feature to allow bound lob columns to return a stream.
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
@@ -54,6 +61,7 @@
     <file name="fvt_012.phpt" role="test" />
     <file name="fvt_013.phpt" role="test" />
     <file name="fvt_014.phpt" role="test" />
+    <file name="fvt_015.phpt" role="test" />
     <file name="fvt_020.phpt" role="test" />
     <file name="fvt_021.phpt" role="test" />
     <file name="fvt_022.phpt" role="test" />
@@ -61,6 +69,7 @@
     <file name="fvt_030.phpt" role="test" />
     <file name="fvt_031.phpt" role="test" />
     <file name="skipif.inc" role="test" />
+    <file name="spook.png" role="test" />
    </dir>
   </filelist>
  </release>
