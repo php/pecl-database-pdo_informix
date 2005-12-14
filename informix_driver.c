@@ -463,7 +463,12 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 	   check_dbh_error(rc, "SQLSetConnectAttr");
 	*/
 
-	//SQLSetConnectAttr (conn_res->hdbc, SQL_ATTR_TRACEFILE, (SQLPOINTER) "/home/ramankr/odbc.log", SQL_NTS);
+    //Set NeedODBCTypesOnly=1 because we dont support Smart Large Objects in PDO yet
+    rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_LO_AUTOMATIC, (SQLPOINTER)SQL_TRUE, SQL_NTS);
+    check_dbh_error(rc, "SQLSetConnectAttr");
+    rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_ODBC_TYPES_ONLY, (SQLPOINTER)SQL_TRUE, SQL_NTS);
+    check_dbh_error(rc, "SQLSetConnectAttr");
+
 	// if we're in auto commit mode, set the connection attribute.
 	if (dbh->auto_commit != 0)
 	{
@@ -585,6 +590,7 @@ void raise_dbh_error(pdo_dbh_t *dbh, char *tag, char *file, int line TSRMLS_DC)
 void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line TSRMLS_DC)
 {
 	stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
+	raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
 
 	// if we're in the middle of execution when an error was detected, make sure we cancel
 	if (stmt_res->executing)
@@ -604,5 +610,5 @@ void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line TSRMLS_D
 		}
 		stmt_res->executing = 0;
 	}
-	raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
+	//raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
 }

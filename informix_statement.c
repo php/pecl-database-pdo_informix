@@ -33,6 +33,77 @@
 #include "php_pdo_informix.h"
 #include "php_pdo_informix_int.h"
 
+struct lob_stream_data {
+    stmt_handle *stmt_res;
+    pdo_stmt_t *stmt;
+    int colno;
+};
+
+size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
+{
+    int readBytes = 0;
+    struct lob_stream_data *data = stream->abstract;
+	column_data *col_res = &data->stmt_res->columns[data->colno];
+	stmt_handle *stmt_res = data->stmt_res;
+    pdo_stmt_t *stmt = data->stmt;
+    int ctype = 0;
+	SQLRETURN rc = 0;
+
+    switch( col_res->data_type ){
+        default:
+        case SQL_LONGVARCHAR:
+            ctype = SQL_C_CHAR; break;
+        case SQL_LONGVARBINARY:
+            ctype = SQL_C_BINARY; break;
+    }
+
+    rc = SQLGetData( stmt_res->hstmt , data->colno + 1 , ctype , buf , count , &readBytes );
+    check_stmt_error(rc, "SQLGetData");
+    return (size_t) readBytes;
+}
+
+size_t lob_stream_write(php_stream *stream, const char *buf, size_t count TSRMLS_DC)
+{
+    return 0;
+}
+
+int lob_stream_flush(php_stream *stream TSRMLS_DC){
+    return 0;
+}
+
+int lob_stream_close(php_stream *stream, int close_handle TSRMLS_DC)
+{
+    struct lob_stream_data *data = stream->abstract;
+    efree(data);
+    return 0;
+}
+
+php_stream_ops lob_stream_ops = {
+    lob_stream_write,   //Write
+    lob_stream_read,    //Read
+    lob_stream_close,   //Close
+    lob_stream_flush,   //Flush
+    "Informix PDO Lob stream",
+    NULL,               //Seek
+    NULL,               //GetS
+    NULL,               //Cast
+    NULL                //Stat
+};
+
+char* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int colno TSRMLS_DC ){
+    struct lob_stream_data *data;
+    column_data *col_res;
+	char* retval;
+
+	data = emalloc(sizeof(struct lob_stream_data));
+    data->stmt_res = stmt_res;
+    data->stmt = stmt;
+    data->colno = colno;
+	col_res = &data->stmt_res->columns[data->colno];
+    retval = (char*) php_stream_alloc(&lob_stream_ops, data, NULL, "r");
+    return retval;
+}
+
 // clear up our column descriptors.  This is done either from 
 // the statement constructors or whenever we traverse from one 
 // result set to the next. 
@@ -233,6 +304,7 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 					Z_STRVAL_P(curr->parameter) = erealloc(Z_STRVAL_P(curr->parameter), curr->max_value_len + 1);
 					check_stmt_allocation(Z_STRVAL_P(curr->parameter), "stmt_bind_parameter", "Unable to allocate bound parameter");
 				}
+            
 				rc = SQLBindParameter(stmt_res->hstmt, curr->paramno + 1,
 						inputOutputType, param_res->ctype, param_res->data_type, param_res->param_size,
 						param_res->scale, Z_STRVAL_P(curr->parameter), curr->max_value_len <= 0 ? 0 : curr->max_value_len,
@@ -248,16 +320,14 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 			if (inputOutputType != SQL_PARAM_INPUT)
 			{
 				inputOutputType = SQL_PARAM_INPUT;
-				//RAISE_IFX_STMT_ERROR( "HY105" , "SQLBindParameter" , "PDO_PARAM_LOB parameters can only be used for input" );
-				//return FALSE;
 			}
 
-			// have we bound a LOB to a long type for some reason?
-			if (param_res->ctype == SQL_C_LONG)
-			{
-				// transfer this as character data.
-				param_res->ctype = SQL_C_CHAR;
-			}
+            // have we bound a LOB to a long type for some reason?
+            if (param_res->ctype == SQL_C_LONG)
+            {
+                // transfer this as character data.
+                param_res->ctype = SQL_C_CHAR;
+            }
 
 			// indicate we're going to transfer the data at exec time.
 			param_res->transfer_length = SQL_DATA_AT_EXEC;
@@ -380,104 +450,49 @@ static int stmt_parameter_post_execute(pdo_stmt_t *stmt, struct pdo_bound_param_
 // bind a column to an internally allocated buffer location. 
 static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 {
-	stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
-	// access the information for this column
-	column_data *col_res = &stmt_res->columns[colno];
-	struct pdo_column_data *col = NULL;
-	char tmp_name[BUFSIZ];
-
-	// get the column descriptor information 
-	int rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(colno + 1 ),
-		tmp_name, BUFSIZ, &col_res->namelen, &col_res->data_type, &col_res->data_size, &col_res->scale, &col_res->nullable);
-	check_stmt_error(rc, "SQLDescribeCol");
-
-	// make sure we get a name properly.  If the name is too long for our 
-	// buffer (which in theory should never happen), allocate a longer one 
-	// and ask for the information again. 
-	if (col_res->namelen <= 0 )
-	{
-		col_res->name = estrdup("");
-		check_stmt_allocation(col_res->name, "stmt_bind_column", "Unable to allocate column name");
-	}
-	else if (col_res->namelen >= BUFSIZ )
-	{
-		/* column name is longer than BUFSIZ*/
-		col_res->name = emalloc(col_res->namelen + 1);
-		check_stmt_allocation(col_res->name, "stmt_bind_column", "Unable to allocate column name");
-		rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(colno + 1 ),
-			col_res->name, BUFSIZ, &col_res->namelen, &col_res->data_type, 
-			&col_res->data_size, &col_res->scale, &col_res->nullable);
-		check_stmt_error(rc, "SQLDescribeCol");
-	}
-	else
-	{
-		col_res->name = estrdup(tmp_name);
-		check_stmt_allocation(col_res->name, "stmt_bind_column", "Unable to allocate column name");
-	}
-
+    stmt_handle *stmt_res;
+	column_data *col_res;
+	struct pdo_column_data *col;
+    int rc;
+	stmt_res = (stmt_handle *)stmt->driver_data;
+    col_res = &stmt_res->columns[colno];
 	col = &stmt->columns[colno];
 
-	// copy the information back into the PDO control block.  Note that 
-	// PDO will release the name information, so we don't have to. 
-	col->name = col_res->name;
-	col->namelen = col_res->namelen;
-	col->maxlen = col_res->data_size;
-	col->precision = col_res->scale;
-
-	// now process the column types
-	switch (col_res->data_type)
-	{
-// the PDO test cases are written to expect everything to be returned 
-// as a string value.  The following code works, but it forces the values 
-// to PDO ints, and the test driver doesn't like that. 		
-#if 0		
-		// this is a long value for PHP
-		case SQL_SMALLINT:
-		case SQL_INTEGER:
-			rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(colno + 1),
-				SQL_C_LONG, &col_res->data.l_val, sizeof(col_res->data.l_val),
-				(SQLINTEGER *)(&col_res->out_length));
-			// these are all returned as long values
-			col_res->returned_type = PDO_PARAM_INT;
-			col->param_type = PDO_PARAM_INT;
-			break;
-#endif		
-
-		// a form we need to force into a string value...this includes any unknown types
-		case SQL_CHAR:
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_TYPE_TIME:
-		case SQL_TYPE_TIMESTAMP:
-		case SQL_BIGINT:
-		case SQL_REAL:
-		case SQL_FLOAT:
-		case SQL_DOUBLE:
-		case SQL_DECIMAL:
-		case SQL_NUMERIC:
-		default:
-		{
-			int in_length = col_res->data_size + 1;
-			col_res->data.str_val = (char *)emalloc(in_length);
-			check_stmt_allocation(col_res->data.str_val, "stmt_bind_column", "Unable to allocate column buffer");
-			rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(colno + 1),
-				SQL_C_CHAR, col_res->data.str_val, in_length,
-				(SQLINTEGER *)(&col_res->out_length));
-			col_res->returned_type = PDO_PARAM_STR;
-			col->param_type = PDO_PARAM_STR; 
-		}
-#if 0		
-		// a blob form....we'll process this at fetch time by doing
-		// a SQLGetData() call.
-		case SQL_CLOB:
-		case SQL_BLOB:
-			// we're going to need to do getdata calls to retrieve these
-			col_res->out_length = 0;
-			// and this is returned as a string too
-			col_res->returned_type = PDO_PARAM_STR;
-			break;
-#endif 		
-	}
+    if( col_res->data_type != SQL_LONGVARCHAR && col_res->data_type != SQL_LONGVARBINARY ){
+        switch (col_res->data_type)
+        {
+            // a form we need to force into a string value...this includes any unknown types
+            case SQL_CHAR:
+            case SQL_VARCHAR:
+            case SQL_LONGVARCHAR:
+            case SQL_TYPE_TIME:
+            case SQL_TYPE_TIMESTAMP:
+            case SQL_BIGINT:
+            case SQL_REAL:
+            case SQL_FLOAT:
+            case SQL_DOUBLE:
+            case SQL_DECIMAL:
+            case SQL_NUMERIC:
+            default:
+            {
+                int in_length = col_res->data_size + 1;
+                col_res->data.str_val = (char *)emalloc(in_length);
+                check_stmt_allocation(col_res->data.str_val, "stmt_bind_column", "Unable to allocate column buffer");
+                rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(colno + 1),
+                    SQL_C_CHAR, col_res->data.str_val, in_length,
+                    (SQLINTEGER *)(&col_res->out_length));
+                col_res->returned_type = PDO_PARAM_STR;
+                col->param_type = PDO_PARAM_STR; 
+            }
+            break;
+        }
+    }else{
+        // we're going to need to do getdata calls to retrieve these
+        col_res->out_length = 0;
+        // and this is returned as a stream
+        col_res->returned_type = PDO_PARAM_LOB;
+        col->param_type = PDO_PARAM_LOB;
+    }
 	return TRUE;
 }
 
@@ -557,61 +572,62 @@ static int informix_stmt_executer(
 	check_stmt_error(rc, "SQLExecute");
 	// now check if we have indirectly bound parameters.  If we do, then we 
 	// need to push the data for those parameters into the processing pipe. 
-	while (rc == SQL_NEED_DATA)
-	{
-		struct pdo_bound_param_data *param;
-		// get the associated parameter data.  The bind process should have 
-		// stored a pointer to the parameter control block, so we identify 
-		// which one needs data from that.     
-		rc = SQLParamData(stmt_res->hstmt, (SQLPOINTER *)&param);
-		check_stmt_error(rc, "SQLParamData");
-		if (rc == SQL_NEED_DATA)
-		{
-			// OK, we have a LOB.  This is either in string form, in which case we can supply it
-			// directly, or is a PHP stream.  If it is a stream, then the type is IS_RESOURCE, and
-			// we need to pump the data in a buffer at a time.
-			if (Z_TYPE_P(param->parameter) != IS_RESOURCE)
-			{
-				rc = SQLPutData(stmt_res->hstmt, Z_STRVAL_P(param->parameter), Z_STRLEN_P(param->parameter));
-				check_stmt_error(rc, "SQLPutData");
-			}
-			else
-			{
-				// the LOB is a stream.  This better still be good, else we 
-				// can't supply the data. 
-				php_stream *stm = NULL;
-				int len;
-				php_stream_from_zval_no_verify(stm, &(param->parameter));
-				if (!stm)
-				{
-					RAISE_IFX_STMT_ERROR("HY000", "execute", "Input parameter LOB is no longer a valid stream");
-					return FALSE;
-				}
-				// allocate a buffer if we haven't prior to this
-				if (stmt_res->lob_buffer == NULL)
-				{
-					stmt_res->lob_buffer = emalloc(LOB_BUFFER_SIZE);
-					check_stmt_allocation(stmt_res->lob_buffer, "stmt_execute", "Unable to allocate parameter data buffer");
-				}
-				
-				// read a buffer at a time and push into the execution pipe. 
-				for (;;)
-				{
-					len = php_stream_read(stm, stmt_res->lob_buffer, LOB_BUFFER_SIZE);
-					if (len == 0)
-					{
-						break;
-					}
-					// add the buffer
-					rc = SQLPutData(stmt_res->hstmt, stmt_res->lob_buffer, len);
-					check_stmt_error(rc, "SQLPutData");
-				}
-			}
+    
+    if( rc == SQL_NEED_DATA ){
+        struct pdo_bound_param_data *param;
 
-			rc = SQLParamData(stmt_res->hstmt, (SQLPOINTER *)&param);
-			check_stmt_error(rc, "SQLParamData");
-		}
-	}
+        // get the associated parameter data.  The bind process should have 
+        // stored a pointer to the parameter control block, so we identify 
+        // which one needs data from that.     
+        rc = SQLParamData(stmt_res->hstmt, (SQLPOINTER *)&param);
+        check_stmt_error(rc, "SQLParamData");
+        while (rc == SQL_NEED_DATA)
+        {
+            // OK, we have a LOB.  This is either in string form, in which case we can supply it
+            // directly, or is a PHP stream.  If it is a stream, then the type is IS_RESOURCE, and
+            // we need to pump the data in a buffer at a time.
+            if (Z_TYPE_P(param->parameter) != IS_RESOURCE)
+            {
+                rc = SQLPutData(stmt_res->hstmt, Z_STRVAL_P(param->parameter), Z_STRLEN_P(param->parameter));
+                check_stmt_error(rc, "SQLPutData");
+            }
+            else
+            {
+                // the LOB is a stream.  This better still be good, else we 
+                // can't supply the data. 
+                php_stream *stm = NULL;
+                int len;
+                php_stream_from_zval_no_verify(stm, &(param->parameter));
+                if (!stm)
+                {
+                    RAISE_IFX_STMT_ERROR("HY000", "execute", "Input parameter LOB is no longer a valid stream");
+                    return FALSE;
+                }
+                // allocate a buffer if we haven't prior to this
+                if (stmt_res->lob_buffer == NULL)
+                {
+                    stmt_res->lob_buffer = emalloc(LOB_BUFFER_SIZE);
+                    check_stmt_allocation(stmt_res->lob_buffer, "stmt_execute", "Unable to allocate parameter data buffer");
+                }
+
+                // read a buffer at a time and push into the execution pipe. 
+                for (;;)
+                {
+                    len = php_stream_read(stm, stmt_res->lob_buffer, LOB_BUFFER_SIZE);
+                    if (len == 0)
+                    {
+                        break;
+                    }
+                    // add the buffer
+                    rc = SQLPutData(stmt_res->hstmt, stmt_res->lob_buffer, len);
+                    check_stmt_error(rc, "SQLPutData");
+                }
+            }
+
+            rc = SQLParamData(stmt_res->hstmt, (SQLPOINTER *)&param);
+            check_stmt_error(rc, "SQLParamData");
+        }
+    }
 
 	// free any LOB buffer we might have
 	if (stmt_res->lob_buffer != NULL)
@@ -726,7 +742,7 @@ static int informix_stmt_param_hook(
 			case PDO_PARAM_EVT_EXEC_PRE:
 				// we're allocating a bound parameter, go do the binding
 				stmt_bind_parameter(stmt, param TSRMLS_CC);
-				 return stmt_parameter_pre_execute(stmt, param TSRMLS_CC);
+				return stmt_parameter_pre_execute(stmt, param TSRMLS_CC);
 
 			case PDO_PARAM_EVT_EXEC_POST:
 				return stmt_parameter_post_execute(stmt, param TSRMLS_CC);
@@ -736,7 +752,25 @@ static int informix_stmt_param_hook(
 			case PDO_PARAM_EVT_FETCH_POST:
 				break;
 		}
-	}
+	}else{
+        switch (event_type)
+		{
+            case PDO_PARAM_EVT_ALLOC:
+                break;
+			case PDO_PARAM_EVT_FREE: 
+                break;
+			case PDO_PARAM_EVT_EXEC_PRE: 
+                break;
+			case PDO_PARAM_EVT_EXEC_POST:
+                break;
+			case PDO_PARAM_EVT_FETCH_PRE:
+                if( param->param_type == PDO_PARAM_LOB )
+                    (&((stmt_handle *)stmt->driver_data)->columns[param->paramno])->returned_type = PDO_PARAM_LOB;
+                break;
+			case PDO_PARAM_EVT_FETCH_POST:
+                break;
+		}
+    }
 	return TRUE;
 }	
 
@@ -746,8 +780,52 @@ static int informix_stmt_describer(
 	int colno
 	TSRMLS_DC)
 {
-	// get the descriptor information and bind to the column location
-	return stmt_bind_column(stmt, colno TSRMLS_CC);
+    stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
+	// access the information for this column
+	column_data *col_res = &stmt_res->columns[colno];
+	struct pdo_column_data *col = NULL;
+	char tmp_name[BUFSIZ];
+
+	// get the column descriptor information 
+	int rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(colno + 1 ),
+		tmp_name, BUFSIZ, &col_res->namelen, &col_res->data_type, &col_res->data_size, &col_res->scale, &col_res->nullable);
+	check_stmt_error(rc, "SQLDescribeCol");
+
+	// make sure we get a name properly.  If the name is too long for our 
+	// buffer (which in theory should never happen), allocate a longer one 
+	// and ask for the information again. 
+	if (col_res->namelen <= 0 )
+	{
+		col_res->name = estrdup("");
+		check_stmt_allocation(col_res->name, "informix_stmt_describer", "Unable to allocate column name");
+	}
+	else if (col_res->namelen >= BUFSIZ )
+	{
+		/* column name is longer than BUFSIZ*/
+		col_res->name = emalloc(col_res->namelen + 1);
+		check_stmt_allocation(col_res->name, "informix_stmt_describer", "Unable to allocate column name");
+		rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(colno + 1 ),
+			col_res->name, BUFSIZ, &col_res->namelen, &col_res->data_type, 
+			&col_res->data_size, &col_res->scale, &col_res->nullable);
+		check_stmt_error(rc, "SQLDescribeCol");
+	}
+	else
+	{
+		col_res->name = estrdup(tmp_name);
+		check_stmt_allocation(col_res->name, "informix_stmt_describer", "Unable to allocate column name");
+	}
+	col = &stmt->columns[colno];
+
+	// copy the information back into the PDO control block.  Note that 
+	// PDO will release the name information, so we don't have to. 
+	col->name = col_res->name;
+	col->namelen = col_res->namelen;
+	col->maxlen = col_res->data_size;
+	col->precision = col_res->scale;
+    
+    //bind the columns
+    stmt_bind_column( stmt , colno TSRMLS_CC );
+	return TRUE;
 }
 
 // fetch the data for a specific column.  This should be sitting in our 
@@ -760,13 +838,17 @@ static int informix_stmt_get_col(
 	int *caller_frees
 	TSRMLS_DC)
 {
-	
 	stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
 	// access our look aside data
 	column_data *col_res = &stmt_res->columns[colno];
 
+    if (col_res->returned_type == PDO_PARAM_LOB)
+    {
+        *ptr = (char*) create_lob_stream( stmt , stmt_res , colno TSRMLS_CC);
+        *len = 0;
+    }
 	// see if this is a null value
-	if (col_res->out_length == SQL_NULL_DATA)
+    else if (col_res->out_length == SQL_NULL_DATA)
 	{
 		// return this as a real null
 		*ptr = NULL;
@@ -980,3 +1062,6 @@ struct pdo_stmt_methods informix_stmt_methods =
 	informix_stmt_get_column_meta, 
 	informix_stmt_next_rowset      
 };
+
+
+
