@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <package version="1.0">
- <name>PDO_IDS</name>
- <summary>PDO driver for IBM Informix IDS databases</summary>
+ <name>PDO_INFORMIX</name>
+ <summary>PDO driver for IBM Informix INFORMIX databases</summary>
  <description>
-  This extension provides an IBM Informix IDS driver for PDO. To build and run
-  PDO_IDS, you must install the Informix Client Software Development Kit (CSDK)
+  This extension provides an IBM Informix Dynamic Server driver for PDO. To build and run
+  PDO_INFORMIX, you must install the Informix Client Software Development Kit (CSDK)
   from http://ibm.com/informix/downloads.html.
  </description>
  <license>Apache License 2.0</license>
@@ -18,12 +18,13 @@
  </maintainers>
 
  <release>
-  <version>0.2</version>
-  <date>2005-11-24</date>
+  <version>1.0.0</version>
+  <date>2005-12-14</date>
   <license>Apache License 2.0</license>
-  <state>beta</state>
+  <state>stable</state>
   <notes>
-   Initial version of PDO_IDS driver for PDO.
+   First stable version of PDO_INFORMIX driver for PDO.
+   Note that on Windows, large objects (LOBs) are currently returned as long strings instead of streams.
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
@@ -31,7 +32,6 @@
   <filelist>
    <dir name="/" baseinstalldir="pdo_informix" role="src">
     <file name="CREDITS" role="doc" />
-    <file name="EXPERIMENTAL" role="doc" />
     <file name="Makefile.frag" role="src" />
     <file name="config.m4" role="src" />
     <file name="config.w32" role="src" />
