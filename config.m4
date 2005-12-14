@@ -11,7 +11,8 @@ PHP_ARG_WITH(pdo-informix, for Informix driver for PDO,
 if test "$PHP_PDO_INFORMIX" != "no"; then
 
   if test "$INFORMIXDIR" = ""; then
-    AC_MSG_ERROR([INFORMIXDIR environment variable is not set.])
+    export INFORMIXDIR="$PHP_PDO_INFORMIX"
+dnl    AC_MSG_ERROR([INFORMIXDIR environment variable is not set.])
   fi
 
   AC_MSG_CHECKING([for PDO includes])
