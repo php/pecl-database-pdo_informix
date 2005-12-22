@@ -24,7 +24,7 @@
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
 #endif
-	
+
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -35,29 +35,28 @@
 #include "zend_exceptions.h"
 #include <stdio.h>
 
-extern struct pdo_stmt_methods informix_stmt_methods;  
+extern struct pdo_stmt_methods informix_stmt_methods;
 extern int informix_stmt_dtor(pdo_stmt_t *stmt TSRMLS_DC);
 
 
-// allocate and initialize the driver_data portion of a 
-// PDOStatement object. 
+/* allocate and initialize the driver_data portion of a PDOStatement object. */
 static int dbh_new_stmt_data(pdo_dbh_t* dbh, pdo_stmt_t *stmt TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 
 	stmt_handle *stmt_res = (stmt_handle *)emalloc(sizeof(stmt_handle));
 	check_allocation(stmt_res, "dbh_new_stmt_data", "Unable to allocate stmt driver data");
-	memset(stmt_res, '\0', sizeof(stmt_handle)); 
+	memset(stmt_res, '\0', sizeof(stmt_handle));
 
 	stmt_res->columns = NULL;
 
-	// attach to the statement
+	/* attach to the statement */
 	stmt->driver_data = stmt_res;
 	stmt->supports_placeholders = PDO_PLACEHOLDER_POSITIONAL;
-	return TRUE; 
+	return TRUE;
 }
 
-// prepare a statement for execution. 
+/* prepare a statement for execution. */
 static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_string, long stmt_len, zval *driver_options TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
@@ -65,34 +64,38 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
 	int rc;
 	SQLSMALLINT param_count;
 
-	// in case we need to convert the statement for positional syntax
+	/* in case we need to convert the statement for positional syntax */
 	int converted_len = 0;
-	stmt_res->converted_statement = NULL; 
+	stmt_res->converted_statement = NULL;
 
-	// the statement passed in to us at this point is the raw statement the programmer
-	// specified.  If the statement is using named parameters (e.g., ":salary", we can't
-	// process this directly.  Fortunately, PDO has a utility function that will
-	// munge the SQL statement into the form we require and do mappings from named to
-	// positional parameters.
+	/*
+	* the statement passed in to us at this point is the raw statement the
+	*  programmer specified.  If the statement is using named parameters
+	* (e.g., ":salary", we can't process this directly.  Fortunately, PDO
+	* has a utility function that will munge the SQL statement into the
+	* form we require and do mappings from named to positional parameters.
+	*/
 
-	// this is necessary...it tells the parser what we require
+	/* this is necessary...it tells the parser what we require */
 	stmt->supports_placeholders = PDO_PLACEHOLDER_POSITIONAL;
 	rc = pdo_parse_params(stmt, (char *)stmt_string, stmt_len, &stmt_res->converted_statement, &converted_len TSRMLS_CC);
-	 
-	// if the query needed reformatting, a new statement string has been passed back
-	// to us.  We're responsible for freeing this when we're done.
-	if (rc == 1)
-	{
+
+	/*
+	* If the query needed reformatting, a new statement string has been
+	* passed back to us.  We're responsible for freeing this when we're done.
+	*/
+	if (rc == 1) {
 		stmt_string = stmt_res->converted_statement;
 		stmt_len = converted_len;
 	}
-	// a negative return indicates there was an error.  The error_code information
-	// in the statement contains the reason.
-	else if (rc == -1)
-	{
-		// copy the error information
+	/*
+	* A negative return indicates there was an error.  The error_code
+	* information in the statement contains the reason.
+	*/
+	else if (rc == -1) {
+		/* copy the error information */
 		RAISE_IFX_STMT_ERROR(stmt->error_code, "pdo_parse_params", "Invalid SQL statement");
-		// this failed...error cleanup will happen later.
+		/* this failed...error cleanup will happen later. */
 		return FALSE;
 	}
 
@@ -100,26 +103,26 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
 	rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &(stmt_res->hstmt));
 	check_stmt_error(rc, "SQLAllocHandle");
 
-	// now see if the cursor type has been explicitly specified.
+	/* now see if the cursor type has been explicitly specified. */
 	stmt_res->cursor_type = pdo_attr_lval(driver_options, PDO_ATTR_CURSOR, PDO_CURSOR_FWDONLY TSRMLS_CC);
 
-	// the default is just sequential access.  If something else has been specified, we need to make this
-	// scrollable.
-	if (stmt_res->cursor_type != PDO_CURSOR_FWDONLY)
-	{
-		// set the statement attribute
+	/*
+	* The default is just sequential access.  If something else has been
+	* specified, we need to make this scrollable.
+	*/
+	if (stmt_res->cursor_type != PDO_CURSOR_FWDONLY) {
+		/* set the statement attribute */
 		rc = SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_CURSOR_TYPE, (void *)SQL_CURSOR_DYNAMIC, 0);
 		check_stmt_error(rc, "SQLSetStmtAttr");
 	}
 
-	  
-	// Prepare the stmt. 
+
+	/* Prepare the stmt. */
 	rc = SQLPrepare((SQLHSTMT)stmt_res->hstmt, (SQLCHAR*)stmt_string, stmt_len);
 	check_stmt_error(rc, "SQLPrepare");
 
-	// we can get rid of the stmt copy now
-	if (stmt_res->converted_statement != NULL)
-	{
+	/* we can get rid of the stmt copy now */
+	if (stmt_res->converted_statement != NULL) {
 		efree(stmt_res->converted_statement);
 		stmt_res->converted_statement = NULL;
 	}
@@ -127,29 +130,31 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
 	rc = SQLNumResultCols((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT*)&param_count);
 	check_stmt_error(rc, "SQLNumResultCols");
 
-	// we're responsible for setting the column_count for the PDO driver.
+	/* we're responsible for setting the column_count for the PDO driver. */
 	stmt->column_count = param_count;
 
-	// attach the methods...we are now live, so errors will no longer immediately
-	// force cleanup of the stmt driver-specific storage.
+	/*
+	* Attach the methods...we are now live, so errors will no longer immediately
+	* force cleanup of the stmt driver-specific storage.
+	*/
 	stmt->methods = &informix_stmt_methods;
-	
+
 	return TRUE;
 }
 
-// debugging routine for printing out failure information. 
+/* debugging routine for printing out failure information. */
 static void current_error_state(pdo_dbh_t *dbh)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	printf("Handling error %s (%s[%ld] at %s:%d)\n",
-		conn_res->error_data.err_msg,      // an associated message
-		conn_res->error_data.failure_name, // the routine name
-		conn_res->error_data.sqlcode,      // native error code of the failure
-		conn_res->error_data.filename,     // source file of the reported error
-		conn_res->error_data.lineno);      // location of the reported error
+		conn_res->error_data.err_msg,      /* an associated message */
+		conn_res->error_data.failure_name, /* the routine name */
+		conn_res->error_data.sqlcode,      /* native error code of the failure */
+		conn_res->error_data.filename,     /* source file of the reported error */
+		conn_res->error_data.lineno);      /* location of the reported error */
 }
 
-// fetch the suppliemental error material 
+/* fetch the suppliemental error material */
 static int informix_handle_fetch_error(
 	pdo_dbh_t *dbh,
 	pdo_stmt_t *stmt,
@@ -158,15 +163,18 @@ static int informix_handle_fetch_error(
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	char suppliment[512];
-	
+
 	sprintf(suppliment, "%s (%s[%ld] at %s:%d)",
-		conn_res->error_data.err_msg,      // an associated message
-		conn_res->error_data.failure_name, // the routine name
-		conn_res->error_data.sqlcode,      // native error code of the failure
-		conn_res->error_data.filename,     // source file of the reported error
-		conn_res->error_data.lineno);      // location of the reported error
- 
-	// now add the error information.  These need to be added in a specific order
+		conn_res->error_data.err_msg,      /*  an associated message */
+		conn_res->error_data.failure_name, /*  the routine name */
+		conn_res->error_data.sqlcode,      /*  native error code of the failure */
+		conn_res->error_data.filename,     /*  source file of the reported error */
+		conn_res->error_data.lineno);      /*  location of the reported error */
+
+	/*
+	* Now add the error information.  These need to be added
+	* in a specific order
+	*/
 	add_next_index_long(info, conn_res->error_data.sqlcode);
 	add_next_index_string(info, suppliment, 1);
 
@@ -174,9 +182,12 @@ static int informix_handle_fetch_error(
 }
 
 
-// NB.  The handle closer is used for PDO dtor purposes, but we also use this for error
-// cleanup if we need to throw an exception while creating the connection.  In that case, the
-// closer is not automatically called by PDO, so we need to force cleanup.
+/*
+*  NB.  The handle closer is used for PDO dtor purposes, but we also use this
+*  for error cleanup if we need to throw an exception while creating the
+*  connection.  In that case, the closer is not automatically called by PDO,
+*  so we need to force cleanup.
+*/
 static int informix_handle_closer(
 	pdo_dbh_t *dbh
 	TSRMLS_DC)
@@ -185,38 +196,41 @@ static int informix_handle_closer(
 
 	conn_res = (conn_handle *)dbh->driver_data;
 
-	// an error can occur at many stages of setup, so we need to check the validity of
-	// each bit as we unwind.
-	if (conn_res != NULL)
-	{
-		// did we get at least as far as creating the environment?
-		if (conn_res->henv != SQL_NULL_HANDLE)
-		{
-			// if we have a handle for the connection, we have more stuff to clean up
-			if (conn_res->hdbc != SQL_NULL_HANDLE)
-			{
-				// roll back the transaction if this hasn't been committed yet.
-				// there's no point in checking for errors here...PDO won't process
-				// and of the failures even if they happen.
-				if (dbh->auto_commit == 0)
-				{
+	/*
+	* An error can occur at many stages of setup, so we need to check the
+	* validity of each bit as we unwind.
+	*/
+	if (conn_res != NULL) {
+		/* did we get at least as far as creating the environment? */
+		if (conn_res->henv != SQL_NULL_HANDLE) {
+			/*
+			* If we have a handle for the connection, we have
+			* more stuff to clean up
+			*/
+			if (conn_res->hdbc != SQL_NULL_HANDLE) {
+				/*
+				* Roll back the transaction if this hasn't been committed yet.
+				* There's no point in checking for errors here...
+				* PDO won't process any of the failures even if they happen.
+				*/
+				if (dbh->auto_commit == 0) {
 					SQLEndTran(SQL_HANDLE_DBC, (SQLHDBC)conn_res->hdbc, SQL_ROLLBACK);
 				}
 				SQLDisconnect((SQLHDBC)conn_res->hdbc);
 				SQLFreeHandle( SQL_HANDLE_DBC, conn_res->hdbc);
 			}
-			// and finally the handle
+			/* and finally the handle */
 			SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
 
 		}
-		// now free the driver data
+		/* now free the driver data */
 		pefree(conn_res, dbh->is_persistent);
 		dbh->driver_data = NULL;
 	}
 	return TRUE;
 }
 
-// prepare a statement for execution. 
+/* prepare a statement for execution. */
 static int informix_handle_preparer(
 	pdo_dbh_t *dbh,
 	const char *sql,
@@ -227,9 +241,8 @@ static int informix_handle_preparer(
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 
-	// allocate new driver_data structure
-	if (dbh_new_stmt_data(dbh, stmt TSRMLS_CC) == TRUE)
-	{
+	/* allocate new driver_data structure */
+	if (dbh_new_stmt_data(dbh, stmt TSRMLS_CC) == TRUE) {
 		/* Allocates the stmt handle */
 		/* Prepares the statement */
 		/* returns the stat_handle back to the calling function */
@@ -238,7 +251,7 @@ static int informix_handle_preparer(
 	return FALSE;
 }
 
-// directly execute an SQL statement. 
+/* directly execute an SQL statement. */
 static long informix_handle_doer(
 	pdo_dbh_t *dbh,
 	const char *sql,
@@ -248,46 +261,50 @@ static long informix_handle_doer(
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	SQLHANDLE hstmt;
 	SQLINTEGER rowCount;
-	// get a statement handle
+	/* get a statement handle */
 	int rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
 	check_dbh_error(rc, "SQLAllocHandle");
-	
+
 	rc = SQLExecDirect(hstmt, (SQLCHAR *)sql, sql_len);
-	if (rc == SQL_ERROR)
-	{
-		// NB...we raise the error before freeing the handle so that 
-		// we catch the proper error record. 
-		raise_sql_error(dbh, NULL, hstmt, SQL_HANDLE_STMT, 
+	if (rc == SQL_ERROR) {
+		/*
+		* NB...we raise the error before freeing the handle so that
+		* we catch the proper error record.
+		*/
+		raise_sql_error(dbh, NULL, hstmt, SQL_HANDLE_STMT,
 			"SQLExecDirect", __FILE__, __LINE__ TSRMLS_CC);
 		SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
-		
-		// things are a bit overloaded here...we're supposed to return a count of the affected
-		// rows, but -1 indicates an error occurred.
+
+		/*
+		* Things are a bit overloaded here...we're supposed to return a count
+		* of the affected rows, but -1 indicates an error occurred.
+		*/
 		return -1;
 	}
-	
-	// we need to update the number of affected rows. 
+
+	/* we need to update the number of affected rows. */
 	rc = SQLRowCount(hstmt, &rowCount);
-	if (rc == SQL_ERROR)
-	{
-		// NB...we raise the error before freeing the handle so that 
-		// we catch the proper error record. 
-		raise_sql_error(dbh, NULL, hstmt, SQL_HANDLE_STMT, 
+	if (rc == SQL_ERROR) {
+		/*
+		* NB...we raise the error before freeing the handle so that
+		* we catch the proper error record.
+		*/
+		raise_sql_error(dbh, NULL, hstmt, SQL_HANDLE_STMT,
 			"SQLRowCount", __FILE__, __LINE__ TSRMLS_CC);
 		SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 		return -1;
 	}
 
-	// this is a one-shot deal, so make sure we free the statement handle 
+	/* this is a one-shot deal, so make sure we free the statement handle */
 	SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 	return rowCount;
 }
 
-// start a new transaction 
+/* start a new transaction */
 static int informix_handle_begin( pdo_dbh_t *dbh TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
-	int rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_NTS); 
+	int rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_NTS);
 	check_dbh_error(rc, "SQLSetConnectAttr");
 	return TRUE;
 }
@@ -300,8 +317,8 @@ static int informix_handle_commit(
 
 	int rc = SQLEndTran(SQL_HANDLE_DBC, conn_res->hdbc, SQL_COMMIT);
 	check_dbh_error(rc, "SQLEndTran");
-	if (dbh->auto_commit != 0){
-		rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
+	if (dbh->auto_commit != 0) {
+		rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS);
 		check_dbh_error(rc, "SQLSetConnectAttr");
 	}
 	return TRUE;
@@ -315,56 +332,53 @@ static int informix_handle_rollback(
 
 	int rc = SQLEndTran(SQL_HANDLE_DBC, conn_res->hdbc, SQL_ROLLBACK);
 	check_dbh_error(rc, "SQLEndTran");
-	if (dbh->auto_commit != 0){
-		rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS); 
+	if (dbh->auto_commit != 0) {
+		rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS);
 		check_dbh_error(rc, "SQLSetConnectAttr");
 	}
 	return TRUE;
 }
 
-// get the driver attributes.  We return the autocommit and 
-// version information. 
+/* Get the driver attributes. We return the autocommit and version information. */
 static int informix_handle_get_attribute(
 	pdo_dbh_t *dbh,
 	long attr,
 	zval *return_value
 	TSRMLS_DC)
 {
-	switch (attr)
-	{
+	switch (attr) {
 		case PDO_ATTR_CLIENT_VERSION:
 			ZVAL_STRING(return_value, "Informix 1.0", 1);
 			return TRUE;
 
-		case PDO_ATTR_AUTOCOMMIT:   
+		case PDO_ATTR_AUTOCOMMIT:
 			ZVAL_BOOL(return_value, dbh->auto_commit);
 			return TRUE;
 	}
 	return FALSE;
 }
 
-// the following is not supported by IFX. 
+/* the following is not supported by IFX. */
 #ifdef __PDO_DB2__
 static int informix_handle_check_liveness(
 	pdo_dbh_t *dbh
 	TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
-	
-	SQLINTEGER dead_flag; 
+
+	SQLINTEGER dead_flag;
 	SQLINTEGER length;
-	
-	int rc = SQLGetConnectAttr(conn_res->hdbc, SQL_ATTR_CONNECTION_DEAD, 
-		(SQLPOINTER)&dead_flag, sizeof(dead_flag), &length); 
-	// this will qualify as a failed liveness check
-	if (rc == SQL_ERROR) 
-	{
+
+	int rc = SQLGetConnectAttr(conn_res->hdbc, SQL_ATTR_CONNECTION_DEAD,
+		(SQLPOINTER)&dead_flag, sizeof(dead_flag), &length);
+	/* this will qualify as a failed liveness check */
+	if (rc == SQL_ERROR) {
 		RAISE_DBH_ERROR("SQLGetConnectAttr");
-		return FAILURE; 
-	}    	
-	// return the state from the query
-	return dead_flag == SQL_CD_FALSE ? SUCCESS : FAILURE; 
-	
+		return FAILURE;
+	}
+	/* return the state from the query */
+	return dead_flag == SQL_CD_FALSE ? SUCCESS : FAILURE;
+
 }
 #endif
 
@@ -373,89 +387,92 @@ static struct pdo_dbh_methods informix_dbh_methods =
 	informix_handle_closer,
 	informix_handle_preparer,
 	informix_handle_doer,
-	NULL,                         // only required if using PLACEHOLDER_NONE
+	NULL,                         /* only required if using PLACEHOLDER_NONE */
 	informix_handle_begin,
 	informix_handle_commit,
 	informix_handle_rollback,
-	NULL,                         // set attribute
-	NULL,                         // last ID
+	NULL,                         /* set attribute */
+	NULL,                         /* last ID */
 	informix_handle_fetch_error,
 	informix_handle_get_attribute,
-#ifdef __PDO_DB2__   
-	informix_handle_check_liveness,  
+#ifdef __PDO_DB2__
+	informix_handle_check_liveness,
 #else
-	NULL,                         // check_liveness 
-#endif    
-	NULL                          // get_driver_methods
+	NULL,                         /* check_liveness  */
+#endif
+	NULL                          /* get_driver_methods */
 };
 
-// handle the business of creating a connection. 
+/* handle the business of creating a connection. */
 static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 {
 	int rc = 0;
-	// allocate our driver data control block.  If this is a persistent connection,
-	// we need to allocate this from persistent storage.
+	/*
+	* Allocate our driver data control block.  If this is a persistent
+	* connection, we need to allocate this from persistent storage.
+	*/
 	conn_handle *conn_res = (conn_handle *)pemalloc(sizeof(conn_handle), dbh->is_persistent);
 	check_allocation(conn_res, "dbh_connect", "Unable to allocate driver data");
 
-	// clear, and hook up to the PDO data structure.
+	/* clear, and hook up to the PDO data structure.*/
 	memset((void *) conn_res, '\0', sizeof(conn_handle));
 	dbh->driver_data = conn_res;
 
-	// we need an environment to use for a base
+	/* we need an environment to use for a base*/
 	rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &conn_res->henv);
 	check_dbh_error(rc, "SQLAllocHandle");
 
-	// and we're using the OBDC version 3 style interface
+	/* and we're using the OBDC version 3 style interface*/
 	rc = SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_ODBC_VERSION, (void *)SQL_OV_ODBC3, 0);
 	check_dbh_error(rc, "SQLSetEnvAttr");
 
-	// now an actual connection handle
+	/* now an actual connection handle*/
 	rc = SQLAllocHandle( SQL_HANDLE_DBC, conn_res->henv, &(conn_res->hdbc));
 	check_dbh_error(rc, "SQLAllocHandle");
 
-	//NB:  We don't have any specific driver options we support at this time, so
-	//  we don't need to do any option parsing.
-	// If the string contains a =, then we need to use SQLDriverConnect to make the
-	// connection.  This may require reform  var_dump($rows);atting the DSN string to include a userid and
-	// password.
-	if (strchr(dbh->data_source, '=') != NULL )
-	{   
-		// first check to see if we have a user name
-		if (dbh->username != NULL && strlen(dbh->username) > 0)
-		{
-			//ok, one was given...however, the DSN may already contain UID information,
-			// so check first.
-			if (strstr(dbh->data_source, ";uid=") == NULL && strstr(dbh->data_source, ";UID=") == NULL)
-			{
+	/*
+	* NB:  We don't have any specific driver options we support at this time, so
+	* we don't need to do any option parsing. If the string contains a =, then
+	* we need to use SQLDriverConnect to make the connection.  This may require
+	* reform  var_dump($rows);atting the DSN string to include a userid and
+	* password.
+	*/
+	if (strchr(dbh->data_source, '=') != NULL ) {
+		/* first check to see if we have a user name*/
+		if (dbh->username != NULL && strlen(dbh->username) > 0) {
+			/*
+			* Ok, one was given...however, the DSN may already contain UID
+			* information, so check first.
+			*/
+			if (strstr(dbh->data_source, ";uid=") == NULL && strstr(dbh->data_source, ";UID=") == NULL) {
 				int dsn_length = strlen(dbh->data_source) + strlen(dbh->username) + strlen(dbh->password) + sizeof(";UID=;PWD=;") + 1;
 				char *new_dsn = pemalloc(dsn_length, dbh->is_persistent);
 				check_allocation(new_dsn, "dbh_connect", "unable to allocate DSN string");
 				sprintf(new_dsn, "%s;UID=%s;PWD=%s;", dbh->data_source, dbh->username, dbh->password);
-				// now replace the DSN with a properly formatted one.
+				/* now replace the DSN with a properly formatted one. */
 				pefree((void *)dbh->data_source, dbh->is_persistent);
 				dbh->data_source = new_dsn;
 			}
 
-		}   
+		}
 
-		// and finally try to connect
+		/* and finally try to connect*/
 		rc = SQLDriverConnect((SQLHDBC)conn_res->hdbc, (SQLHWND)NULL,
 			(SQLCHAR*)dbh->data_source, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT );
 		check_dbh_error(rc, "SQLDriverConnect");
 	}
-	else
-	{   
-		// no connection options specified, we can just connect with the name, userid, and
-		// password as given.  var_dump($rows);
+	else {
+		/*
+		* No connection options specified, we can just connect with the name,
+		*  userid, and password as given.
+		*/
 		rc = SQLConnect( (SQLHDBC)conn_res->hdbc, (SQLCHAR *)dbh->data_source,
 			(SQLSMALLINT)dbh->data_source_len, (SQLCHAR *)dbh->username, (SQLSMALLINT)strlen(dbh->username),
 			(SQLCHAR *)dbh->password, (SQLSMALLINT)strlen(dbh->password));
 		check_dbh_error(rc, "SQLConnect");
 	}
 
-	/*
-	   //trace odbc calls
+	/* trace odbc calls
 	   char* file="/home/ramankr/odbc.trace";
 	   rc = SQLSetConnectAttr (conn_res->hdbc, SQL_ATTR_TRACE, (SQLPOINTER) SQL_OPT_TRACE_ON,(SQLINTEGER) NULL);
 	   check_dbh_error(rc, "SQLSetConnectAttr");
@@ -463,72 +480,77 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 	   check_dbh_error(rc, "SQLSetConnectAttr");
 	*/
 
-    //Set NeedODBCTypesOnly=1 because we dont support Smart Large Objects in PDO yet
-    rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_LO_AUTOMATIC, (SQLPOINTER)SQL_TRUE, SQL_NTS);
-    check_dbh_error(rc, "SQLSetConnectAttr");
-    rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_ODBC_TYPES_ONLY, (SQLPOINTER)SQL_TRUE, SQL_NTS);
-    check_dbh_error(rc, "SQLSetConnectAttr");
+	/*
+	* Set NeedODBCTypesOnly=1 because we dont support
+	* Smart Large Objects in PDO yet
+	*/
+	rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_LO_AUTOMATIC, (SQLPOINTER)SQL_TRUE, SQL_NTS);
+	check_dbh_error(rc, "SQLSetConnectAttr");
+	rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_INFX_ATTR_ODBC_TYPES_ONLY, (SQLPOINTER)SQL_TRUE, SQL_NTS);
+	check_dbh_error(rc, "SQLSetConnectAttr");
 
-	// if we're in auto commit mode, set the connection attribute.
-	if (dbh->auto_commit != 0)
-	{
+	/* if we're in auto commit mode, set the connection attribute. */
+	if (dbh->auto_commit != 0) {
 		rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_ON, SQL_NTS);
 		check_dbh_error(rc, "SQLSetConnectAttr");
-	}else{
+	}
+	else {
 		rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_NTS);
 		check_dbh_error(rc, "SQLSetConnectAttr");
 	}
-  
-	dbh->native_case = PDO_CASE_LOWER; 
+
+	dbh->native_case = PDO_CASE_LOWER;
 	dbh->desired_case = PDO_CASE_UPPER;
 
-	// this is now live!  all error handling goes through normal mechanisms.
+	/* this is now live!  all error handling goes through normal mechanisms.*/
 	dbh->methods = &informix_dbh_methods;
 	dbh->alloc_own_columns = 1;
 	return TRUE;
 }
 
-	
-// main routine called to create a connection.  The dbh structure is allocated
-// for us, and we attached a driver-specific control block to the PDO allocated one,
+
+/*
+* Main routine called to create a connection.  The dbh structure is
+* allocated for us, and we attached a driver-specific control block
+* to the PDO allocated one,
+*/
 static int informix_handle_factory(
 	pdo_dbh_t *dbh,
 	zval *driver_options
 	TSRMLS_DC)
 {
-	// go do the connection
+	/* go do the connection*/
 	return dbh_connect( dbh, driver_options TSRMLS_CC);
-}   
+}
 
-pdo_driver_t pdo_informix_driver = 
+pdo_driver_t pdo_informix_driver =
 {
 	PDO_DRIVER_HEADER(informix),
 	informix_handle_factory
 };
 
-// common error handling path for final disposition of an error. 
+/* common error handling path for final disposition of an error.*/
 static void process_pdo_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt TSRMLS_DC)
-{   
-//  current_error_state(dbh);
-	
+{
+/*  current_error_state(dbh);*/
+
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	strcpy(dbh->error_code, conn_res->error_data.sql_state);
-	if (stmt != NULL)
-	{
-		// what this a error in the stmt constructor?
-		if (stmt->methods == NULL)
-		{
-			// make sure we do any required cleanup.
+	if (stmt != NULL) {
+		/* what this a error in the stmt constructor?*/
+		if (stmt->methods == NULL) {
+			/* make sure we do any required cleanup.*/
 			informix_stmt_dtor(stmt TSRMLS_CC);
 		}
 		strcpy(stmt->error_code, conn_res->error_data.sql_state);
 	}
 
-	// if we got an error very early, we need to throw an exception rather than
-	// use the PDO error reporting.
-	if (dbh->methods == NULL)
-	{
-		// if we're not fully initialized, we need to force cleanup ourselves.
+	/*
+	* if we got an error very early, we need to throw an exception rather than
+	* use the PDO error reporting.
+	*/
+	if (dbh->methods == NULL) {
+		/* if we're not fully initialized, we need to force cleanup ourselves.*/
 		informix_handle_closer(dbh TSRMLS_CC);
 		zend_throw_exception_ex(php_pdo_get_exception(), 0 TSRMLS_CC, "SQLSTATE=%s, %s: %d %s",
 			conn_res->error_data.sql_state, conn_res->error_data.failure_name,
@@ -536,9 +558,11 @@ static void process_pdo_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt TSRMLS_DC)
 	}
 }
 
-// handle an error return from an SQL call.  The error information from the 
-// call is saved in our error record. 
-void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle, 
+/*
+* Handle an error return from an SQL call.  The error information from the
+* call is saved in our error record.
+*/
+void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle,
 	SQLSMALLINT hType, char *tag, char *file, int line TSRMLS_DC)
 {
 	SQLSMALLINT length;
@@ -548,18 +572,20 @@ void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle,
 	conn_res->error_data.filename = file;
 	conn_res->error_data.lineno = line;
 
-	SQLGetDiagRec(hType, handle, 1, (SQLCHAR *)&(conn_res->error_data.sql_state), 
+	SQLGetDiagRec(hType, handle, 1, (SQLCHAR *)&(conn_res->error_data.sql_state),
 		&(conn_res->error_data.sqlcode), (SQLCHAR *)&(conn_res->error_data.err_msg),
 		SQL_MAX_MESSAGE_LENGTH, &length );
-	// the error message is not returned null terminated.
+	/* the error message is not returned null terminated. */
 	conn_res->error_data.err_msg[length] = '\0';
 
-	// now go tell PDO about this problem
+	/* now go tell PDO about this problem */
 	process_pdo_error(dbh, stmt TSRMLS_CC);
 }
 
-// raise a driver-detected error.  This is a faked-SQL type error, using a provided 
-// sqlstate and message info. 
+/*
+* Raise a driver-detected error.  This is a faked-SQL type error, using a
+* provided sqlstate and message info.
+*/
 void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *tag,
 	char *message, char *file, int line TSRMLS_DC)
 {
@@ -571,44 +597,54 @@ void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *t
 	strcpy(conn_res->error_data.err_msg, message);
 
 	strcpy(conn_res->error_data.sql_state, state);
-	conn_res->error_data.sqlcode = 1;    // just give a non-zero code state.
-	// now go tell PDO about this problem
+	conn_res->error_data.sqlcode = 1;    /* just give a non-zero code state. */
+	/* now go tell PDO about this problem */
 	process_pdo_error(dbh, stmt TSRMLS_CC);
 }
 
-// raise an error in a connection context.  This ensures we use the 
-// connection handle for retrieving error information. 
+/*
+* Raise an error in a connection context.  This ensures we use the
+* connection handle for retrieving error information.
+*/
 void raise_dbh_error(pdo_dbh_t *dbh, char *tag, char *file, int line TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	raise_sql_error(dbh, NULL, conn_res->hdbc, SQL_HANDLE_DBC, tag, file, line TSRMLS_CC);
 }
 
-// raise an error in a statement context.  This ensures we use the correct 
-// handle for retrieving the diag record, as well as forcing stmt-related 
-// cleanup. 
+/*
+* Raise an error in a statement context.  This ensures we use the correct
+* handle for retrieving the diag record, as well as forcing stmt-related
+* cleanup.
+*/
 void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line TSRMLS_DC)
 {
 	stmt_handle *stmt_res = (stmt_handle *)stmt->driver_data;
 	raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
 
-	// if we're in the middle of execution when an error was detected, make sure we cancel
-	if (stmt_res->executing)
-	{
-		// cancel the statement
+	/* if we're in the middle of execution when an error was detected, make sure we cancel */
+	if (stmt_res->executing) {
+		/*  cancel the statement */
 		SQLCancel(stmt_res->hstmt);
-		// make sure we release execution-related storage. 
-		if (stmt_res->lob_buffer != NULL)
-		{
+		/*  make sure we release execution-related storage. */
+		if (stmt_res->lob_buffer != NULL) {
 			efree(stmt_res->lob_buffer);
 			stmt_res->lob_buffer = NULL;
 		}
-		if (stmt_res->converted_statement != NULL) 
-		{
+		if (stmt_res->converted_statement != NULL) {
 			efree(stmt_res->converted_statement);
-			stmt_res->converted_statement = NULL; 
+			stmt_res->converted_statement = NULL;
 		}
 		stmt_res->executing = 0;
 	}
-	//raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
+	/* raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC); */
 }
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

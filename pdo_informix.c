@@ -36,7 +36,7 @@ ZEND_DECLARE_MODULE_GLOBALS(pdo_informix)
 
 /* True global resources - no need for thread safety here */
 static int le_pdo_informix;
-extern pdo_driver_t pdo_informix_driver;   // the registration table 
+extern pdo_driver_t pdo_informix_driver;   /* the registration table */
 
 /* {{{ pdo_informix_functions[]
  *
