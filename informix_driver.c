@@ -552,7 +552,7 @@ pdo_driver_t pdo_informix_driver = {
 /* common error handling path for final disposition of an error.*/
 static void process_pdo_error(pdo_dbh_t * dbh, pdo_stmt_t * stmt TSRMLS_DC)
 {
-/*  current_error_state(dbh);*/
+	/*  current_error_state(dbh);*/
 
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 	strcpy(dbh->error_code, conn_res->error_data.sql_state);
@@ -569,14 +569,14 @@ static void process_pdo_error(pdo_dbh_t * dbh, pdo_stmt_t * stmt TSRMLS_DC)
 	 * if we got an error very early, we need to throw an exception rather than
 	 * use the PDO error reporting.
 	 */
-
-	zend_throw_exception_ex(php_pdo_get_exception(), 0 TSRMLS_CC,
-			"SQLSTATE=%s, %s: %d %s",
-			conn_res->error_data.sql_state,
-			conn_res->error_data.failure_name,
-			conn_res->error_data.sqlcode,
-			conn_res->error_data.err_msg);
-	informix_handle_closer(dbh TSRMLS_CC);
+	if (dbh->methods == NULL) {
+		zend_throw_exception_ex(php_pdo_get_exception(), 0 TSRMLS_CC,
+				"SQLSTATE=%s, %s: %d %s",
+				conn_res->error_data.sql_state,
+				conn_res->error_data.failure_name,
+				conn_res->error_data.sqlcode,
+				conn_res->error_data.err_msg);
+		informix_handle_closer(dbh TSRMLS_CC);
 	}
 }
 
