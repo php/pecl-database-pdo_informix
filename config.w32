@@ -1,19 +1,19 @@
-// $Id$
-// vim:ft=javascript
-
 ARG_WITH("pdo-informix", "Informix IDS support for PDO. Pass the location of the Informix CSDK, for example, --with-pdo-informix=C:\\IBM\\CSDK", "no");
 
-if (PHP_PDO_INFORMIX != "no") {
+if (PHP_PDO_INFORMIX != "no")
+{
 	if (CHECK_LIB("iclit09b.lib", "pdo_informix", PHP_PDO_INFORMIX) &&
-		CHECK_HEADER_ADD_INCLUDE('sql.h', 'CFLAGS_PDO_INFORMIX', PHP_PDO_INFORMIX + '\\incl\\cli;' + PHP_PHP_BUILD + "\\include\\informix\\cli") &&
-		CHECK_HEADER_ADD_INCLUDE('ifxtypes.h', 'CFLAGS_PDO_INFORMIX', PHP_PDO_INFORMIX + '\\incl\\esql;' + PHP_PHP_BUILD + "\\include\\informix\\esql")) {
+		CHECK_HEADER_ADD_INCLUDE('sql.h', 'CFLAGS_PDO_INFORMIX', PHP_PDO_INFORMIX + '\\incl\\cli') &&
+		CHECK_HEADER_ADD_INCLUDE('ifxtypes.h', 'CFLAGS_PDO_INFORMIX', PHP_PDO_INFORMIX + '\\incl\\esql'))
+	{
 		ADD_FLAG( 'CFLAGS_PDO_INFORMIX' , '/I "' + PHP_PDO_INFORMIX + '\\incl\\cli" ');
 		ADD_FLAG( 'CFLAGS_PDO_INFORMIX' , '/I "' + PHP_PDO_INFORMIX + '\\incl\\esql" ');
 		ADD_FLAG( 'LDFLAGS_PDO_INFORMIX' , '/libpath:"' + PHP_PDO_INFORMIX + '\\lib" ' );
-  	        EXTENSION('pdo_informix', "pdo_informix.c informix_driver.c informix_statement.c");
+		EXTENSION('pdo_informix', "pdo_informix.c informix_driver.c informix_statement.c");
 	}
-        else {
-                WARNING("pdo_informix not enabled; libraries and headers not found");
-        }
+	else
+	{
+		WARNING("pdo_informix not enabled; libraries and headers not found");
+	}
 	ADD_EXTENSION_DEP("pdo_informix", "pdo");
 }

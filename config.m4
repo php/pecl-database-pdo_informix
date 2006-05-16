@@ -1,7 +1,3 @@
-dnl $Id$
-dnl config.m4 for extension pdo_informix
-dnl vim:et:sw=2:ts=2:
-
 if test "$PHP_PDO" != "no"; then
 
 PHP_ARG_WITH(pdo-informix, for Informix driver for PDO,
@@ -10,9 +6,12 @@ PHP_ARG_WITH(pdo-informix, for Informix driver for PDO,
 
 if test "$PHP_PDO_INFORMIX" != "no"; then
 
-  if test "$INFORMIXDIR" = ""; then
-    export INFORMIXDIR="$PHP_PDO_INFORMIX"
-dnl    AC_MSG_ERROR([INFORMIXDIR environment variable is not set.])
+  if test -n "$PHP_PDO_INFORMIX" -a "$PHP_PDO_INFORMIX" != "yes"; then
+    INFORMIXDIR="$PHP_PDO_INFORMIX"
+  else
+    if test "$INFORMIXDIR" = ""; then
+      AC_MSG_ERROR([INFORMIXDIR environment variable is not set. Please use --with-pdo-informix=<DIR> or set the INFORMIXDIR environment variable.])
+    fi
   fi
 
   AC_MSG_CHECKING([for PDO includes])
@@ -30,25 +29,36 @@ dnl    AC_MSG_ERROR([INFORMIXDIR environment variable is not set.])
   dnl Don't forget to add additional source files here
   php_pdo_informix_sources_core="pdo_informix.c informix_driver.c informix_statement.c"
 
-  if test "$PHP_PDO_INFORMIX" != "no"; then
-    AC_MSG_CHECKING([for includes and libraries])
-    PHP_ADD_INCLUDE($INFORMIXDIR/incl/cli)
-    PHP_ADD_INCLUDE($INFORMIXDIR/incl/esql)
-    dnl PHP_ADD_INCLUDE($INFORMIXDIR/incl/<whatever include directory you need>)
-    PHP_ADD_LIBPATH($INFORMIXDIR/lib, PDO_INFORMIX_SHARED_LIBADD)
-    PHP_ADD_LIBPATH($INFORMIXDIR/lib/cli, PDO_INFORMIX_SHARED_LIBADD)
-    PHP_ADD_LIBPATH($INFORMIXDIR/lib/esql, PDO_INFORMIX_SHARED_LIBADD)
+  AC_MSG_CHECKING([for includes and libraries])
+ 
+  if test -d "$INFORMIXDIR"; then
+    if test ! -d "$INFORMIXDIR/incl/cli"; then
+       AC_MSG_ERROR([Cannot find Informix Client SDK includes in $INFORMIXDIR/inc/cli])
+    fi  
+    if test ! -d "$INFORMIXDIR/incl/esql"; then
+       AC_MSG_ERROR([Cannot find ESQL/C includes in $INFORMIXDIR/inc/esql])
+    fi  
+    if test ! -d "$INFORMIXDIR/$PHP_LIBDIR"; then
+       AC_MSG_ERROR([Cannot find Informix libraries in $INFORMIXDIR/$PHP_LIBDIR])
+    fi  
+    if test ! -d "$INFORMIXDIR/$PHP_LIBDIR/cli"; then
+       AC_MSG_ERROR([Cannot find Informix Client SDK libraries in $INFORMIXDIR/$PHP_LIBDIR/cli])
+    fi  
+    if test ! -d "$INFORMIXDIR/$PHP_LIBDIR/esql"; then
+       AC_MSG_ERROR([Cannot find ESQL/C libraries in $INFORMIXDIR/$PHP_LIBDIR/esql])
+    fi  
   else
-    if test "$PHP_INFORMIX" != "$INFORMIXDIR"; then
-      AC_MSG_ERROR([Specified Informix base install directory is different than your INFORMIXDIR environment variable.])
-    fi
-    PHP_ADD_INCLUDE($INFORMIXDIR/incl/cli)
-    PHP_ADD_INCLUDE($INFORMIXDIR/incl/esql)
-    dnl PHP_ADD_INCLUDE($INFORMIXDIR/incl/<whatever include directory you need>)
-    PHP_ADD_LIBPATH($PHP_INFORMIX/lib, PDO_INFORMIX_SHARED_LIBADD)
-    PHP_ADD_LIBPATH($PHP_INFORMIX/lib/cli, PDO_INFORMIX_SHARED_LIBADD)
-    PHP_ADD_LIBPATH($PHP_INFORMIX/lib/esql, PDO_INFORMIX_SHARED_LIBADD)
+    AC_MSG_ERROR([Informix base installation directory '$INFORMIXDIR' doesn't exist.])
   fi
+ 
+  AC_MSG_RESULT($INFORMIXDIR)
+
+  PHP_ADD_INCLUDE($INFORMIXDIR/incl/cli)
+  PHP_ADD_INCLUDE($INFORMIXDIR/incl/esql)
+  dnl PHP_ADD_INCLUDE($INFORMIXDIR/incl/<whatever include directory you need>)
+  PHP_ADD_LIBPATH($INFORMIXDIR/$PHP_LIBDIR, PDO_INFORMIX_SHARED_LIBADD)
+  PHP_ADD_LIBPATH($INFORMIXDIR/$PHP_LIBDIR/cli, PDO_INFORMIX_SHARED_LIBADD)
+  PHP_ADD_LIBPATH($INFORMIXDIR/$PHP_LIBDIR/esql, PDO_INFORMIX_SHARED_LIBADD)
 
   dnl Check if thread safety flags are needed
   if test "$enable_experimental_zts" = "yes"; then
@@ -74,7 +84,7 @@ dnl    AC_MSG_ERROR([INFORMIXDIR environment variable is not set.])
   AC_MSG_RESULT($IFX_VERSION)
   AC_DEFINE_UNQUOTED(IFX_VERSION, $IFX_VERSION, [ ])
 
-  if test $IFX_VERSION -ge "900"; then
+  if test $IFX_VERSION -ge 900; then
     AC_DEFINE(HAVE_IFX_IUS,1,[ ])
 dnl    IFX_ESQL_FLAGS="$IFX_ESQL_FLAGS -EDHAVE_IFX_IUS"
 dnl  else
@@ -111,7 +121,7 @@ dnl        PHP_ADD_LIBRARY_DEFER(pdo_informix, 1, PDO_INFORMIX_SHARED_LIBADD)
             ;;
           *)
             ac_dir="`echo $i|sed 's#[^/]*$##;s#\/$##'`"
-            ac_lib="`echo $i|sed 's#^/.*/lib##g;s#\.a##g'`"
+            ac_lib="`echo $i|sed 's#^/.*/$PHP_LIBDIR##g;s#\.a##g'`"
             DLIBS="$DLIBS -L$ac_dir -l$ac_lib"
             ;;
         esac

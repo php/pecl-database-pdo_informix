@@ -18,20 +18,16 @@
  </maintainers>
 
  <release>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <date>2005-12-14</date>
   <license>Apache License 2.0</license>
-  <state>stable</state>
+  <state>alpha</state>
   <notes>
-   First stable version of PDO_INFORMIX driver for PDO.
-   Note that on Windows, large objects (LOBs) are currently returned as long strings instead of streams.
-
-   Fixed issue where re-executing a statement would crash because column descriptors were being released at the wrong time.
-   Fixed the behavior of PDO transactions to comply with PDO spec.
-   Fixed bug where PDO::PARAM_LOB was not processed properly causing an exception when binding a string value to a varchar using PDO::PARAM_LOB
-   Fixed a bug which caused a crash when binding multiple stream based LOB parameters.
-   Fixed how text,binary,clob,blob fields are bound to columns.
-   Added feature to allow bound lob columns to return a stream.
+    Added LOB Stream implementation to comply with PDO spec. (Currently only supports text/byte columns)
+    Fixed a segfault that occured when more than one stream was bound to prepared statement.
+    Bugfix PECL#6717: PHP segfaults when trying execute prepared, parameterized SQL.
+    Fixed issue where error codes were not being cleared. 
+    Fixed segfault caused by trying to report a PHP exception using a stale connection handle.
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
@@ -70,6 +66,13 @@
     <file name="fvt_031.phpt" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="spook.png" role="test" />
+    <file name="clob.dat" role="test" />
+    <file name="fvt_016.phpt" role="test" />
+    <file name="fvt_017.phpt" role="test" />
+    <file name="fvt_017b.phpt" role="test" />
+    <file name="fvt_49872.phpt" role="test" />
+    <file name="large_blob.dat" role="test" />
+    <file name="large_clob.dat" role="test" />
    </dir>
   </filelist>
  </release>

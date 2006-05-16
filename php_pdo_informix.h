@@ -14,7 +14,7 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Krishna Raman                                 |
+  | Authors: Rick McGuire, Krishna Raman, Kellen Bombardier              |
   |                                                                      |
   +----------------------------------------------------------------------+
 */
@@ -45,8 +45,8 @@ PHP_MINFO_FUNCTION(pdo_informix);
 PHP_FUNCTION(confirm_pdo_informix_compiled);	/* For testing, remove later. */
 
 /* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
+	Declare any global variables you may need between the BEGIN
+	and END macros here:	 
 
 ZEND_BEGIN_MODULE_GLOBALS(pdo_informix)
 	long  global_value;
@@ -54,14 +54,15 @@ ZEND_BEGIN_MODULE_GLOBALS(pdo_informix)
 ZEND_END_MODULE_GLOBALS(pdo_informix)
 */
 
-/* In every utility function you add that needs to use variables 
-   in php_pdo_informix_globals, call TSRMLS_FETCH(); after declaring other 
-   variables used by that function, or better yet, pass in TSRMLS_CC
-   after the last function argument and declare your utility function
-   with TSRMLS_DC after the last declared argument.  Always refer to
-   the globals in your function as PDO_INFORMIX_G(variable).  You are 
-   encouraged to rename these macros something shorter, see
-   examples in any other php module directory.
+/*
+	In every utility function you add that needs to use variables 
+	in php_pdo_informix_globals, call TSRMLS_FETCH(); after declaring other 
+	variables used by that function, or better yet, pass in TSRMLS_CC
+	after the last function argument and declare your utility function
+	with TSRMLS_DC after the last declared argument.  Always refer to
+	the globals in your function as PDO_INFORMIX_G(variable).  You are 
+	encouraged to rename these macros something shorter, see
+	examples in any other php module directory.
 */
 
 #ifdef ZTS
@@ -70,7 +71,7 @@ ZEND_END_MODULE_GLOBALS(pdo_informix)
 #define PDO_INFORMIX_G(v) (pdo_informix_globals.v)
 #endif
 
-#endif	/* PHP_PDO_INFORMIX_H */
+#endif				/* PHP_PDO_INFORMIX_H */
 
 
 /*

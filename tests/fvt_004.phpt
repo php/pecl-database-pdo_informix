@@ -8,7 +8,7 @@ pdo_informix: Connection attempt with wrong user/pwd
     class Test extends FVTTest {
         public function __construct(){
             parent::__construct();
-            $this->dsn .= "User Id=not_a_user;Password=invalid_pass";
+            $this->dsn .= "UId=not_a_user;Password=invalid_pass";
             $this->user = "";
             $this->pass = "";
         }
