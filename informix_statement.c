@@ -14,12 +14,10 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Krishna Raman, Kellen Bombardier              |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
   |                                                                      |
   +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

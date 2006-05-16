@@ -14,12 +14,11 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Krishna Raman, Kellen Bombardier              |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
   |                                                                      |
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
 #ifndef PHP_PDO_INFORMIX_H
 #define PHP_PDO_INFORMIX_H
 
