@@ -64,6 +64,7 @@
     <file name="fvt_013.phpt" role="test" />
     <file name="fvt_014.phpt" role="test" />
     <file name="fvt_015.phpt" role="test" />
+    <file name="fvt_019.phpt" role="test" />
     <file name="fvt_020.phpt" role="test" />
     <file name="fvt_021.phpt" role="test" />
     <file name="fvt_022.phpt" role="test" />

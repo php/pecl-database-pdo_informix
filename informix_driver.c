@@ -176,6 +176,29 @@ static void current_error_state(pdo_dbh_t * dbh)
 	   conn_res->error_data.lineno);	/* location of the reported error */
 }
 
+/* fetch the last inserted serial id */
+static char *informix_handle_lastInsertID(pdo_dbh_t * dbh, const char *name, unsigned int *len TSRMLS_CC)
+{
+	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
+	SQLHANDLE hstmt;
+	char *id = emalloc(20);
+	int length = 0;
+
+	int rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
+	check_dbh_error(rc, "SQLAllocHandle");
+
+	rc = SQLExecDirect(hstmt, (SQLCHAR *) "SELECT DBINFO('sqlca.sqlerrd1') FROM systables WHERE tabname = 'systables'", SQL_NTS);
+	rc = SQLBindCol(hstmt, 1, SQL_C_LONG, &length, 0, (SQLPOINTER)id);
+	rc = SQLFetch(hstmt);
+
+	sprintf(id, "%d", length);
+	*len = strlen(id);
+
+	SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
+
+return id;
+}
+
 /* fetch the suppliemental error material */
 static int informix_handle_fetch_error(pdo_dbh_t * dbh,
 					   pdo_stmt_t * stmt,
@@ -401,7 +424,7 @@ static struct pdo_dbh_methods informix_dbh_methods = {
 	informix_handle_commit,
 	informix_handle_rollback,
 	NULL,			/* set attribute */
-	NULL,			/* last ID */
+	informix_handle_lastInsertID,
 	informix_handle_fetch_error,
 	informix_handle_get_attribute,
 #ifdef __PDO_DB2__
