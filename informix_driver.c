@@ -177,7 +177,7 @@ static void current_error_state(pdo_dbh_t * dbh)
 }
 
 /* fetch the last inserted serial id */
-static char *informix_handle_lastInsertID(pdo_dbh_t * dbh, const char *name, unsigned int *len TSRMLS_CC)
+static char *informix_handle_lastInsertID(pdo_dbh_t * dbh, const char *name, unsigned int *len TSRMLS_DC)
 {
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 	SQLHANDLE hstmt;
