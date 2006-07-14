@@ -130,7 +130,13 @@ static int dbh_prepare_stmt(pdo_dbh_t * dbh, pdo_stmt_t * stmt,
 	/* Prepare the stmt. */
 	rc = SQLPrepare((SQLHSTMT) stmt_res->hstmt, (SQLCHAR *) stmt_string,
 			stmt_len);
+
+	/* Check for errors from that prepare */
 	check_stmt_error(rc, "SQLPrepare");
+	if (rc == SQL_ERROR) {
+		stmt_cleanup(stmt TSRMLS_CC);
+		return FALSE;
+	}
 
 	/* we can get rid of the stmt copy now */
 	if (stmt_res->converted_statement != NULL) {
@@ -179,24 +185,14 @@ static void current_error_state(pdo_dbh_t * dbh)
 /* fetch the last inserted serial id */
 static char *informix_handle_lastInsertID(pdo_dbh_t * dbh, const char *name, unsigned int *len TSRMLS_DC)
 {
-	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
-	SQLHANDLE hstmt;
 	char *id = emalloc(20);
-	int length = 0;
+	int rc = 0;
+	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 
-	int rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
-	check_dbh_error(rc, "SQLAllocHandle");
-
-	rc = SQLExecDirect(hstmt, (SQLCHAR *) "SELECT DBINFO('sqlca.sqlerrd1') FROM systables WHERE tabname = 'systables'", SQL_NTS);
-	rc = SQLBindCol(hstmt, 1, SQL_C_LONG, &length, 0, (SQLPOINTER)id);
-	rc = SQLFetch(hstmt);
-
-	sprintf(id, "%d", length);
+	sprintf(id, "%d", conn_res->last_insert_id);
 	*len = strlen(id);
 
-	SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
-
-return id;
+	return id;
 }
 
 /* fetch the suppliemental error material */
@@ -262,7 +258,6 @@ static int informix_handle_closer(pdo_dbh_t * dbh TSRMLS_DC)
 			}
 			/* and finally the handle */
 			SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
-
 		}
 		/* now free the driver data */
 		pefree(conn_res, dbh->is_persistent);
@@ -419,11 +414,11 @@ static struct pdo_dbh_methods informix_dbh_methods = {
 	informix_handle_closer,
 	informix_handle_preparer,
 	informix_handle_doer,
-	NULL,			/* only required if using PLACEHOLDER_NONE */
+	NULL,							/* only required if using PLACEHOLDER_NONE */
 	informix_handle_begin,
 	informix_handle_commit,
 	informix_handle_rollback,
-	NULL,			/* set attribute */
+	NULL,							/* set attribute */
 	informix_handle_lastInsertID,
 	informix_handle_fetch_error,
 	informix_handle_get_attribute,
@@ -515,7 +510,6 @@ static int dbh_connect(pdo_dbh_t * dbh, zval * driver_options TSRMLS_DC)
 			(SQLSMALLINT) strlen(dbh->password));
 	check_dbh_error(rc, "SQLConnect");
 	}
-
 
 	/*
 	 * Set NeedODBCTypesOnly=1 because we dont support
@@ -670,8 +664,6 @@ void raise_stmt_error(pdo_stmt_t * stmt, char *tag, char *file,
 			  int line TSRMLS_DC)
 {
 	stmt_handle *stmt_res = (stmt_handle *) stmt->driver_data;
-	raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag,
-			file, line TSRMLS_CC);
 
 	/* if we're in the middle of execution when an error was detected, make sure we cancel */
 	if (stmt_res->executing) {
@@ -688,7 +680,7 @@ void raise_stmt_error(pdo_stmt_t * stmt, char *tag, char *file,
 		}
 		stmt_res->executing = 0;
 	}
-	/* raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC); */
+	raise_sql_error(stmt->dbh, stmt, stmt_res->hstmt, SQL_HANDLE_STMT, tag, file, line TSRMLS_CC);
 }
 
 /*

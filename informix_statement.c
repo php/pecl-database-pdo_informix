@@ -348,7 +348,7 @@ int stmt_bind_parameter(pdo_stmt_t * stmt,
 				is_num = 1;
 			}
 			if (Z_TYPE_P(curr->parameter) == IS_NULL
-					|| (is_num && *(curr->parameter)->value.str.val == '\0')) {
+					|| (is_num && Z_STRVAL_P(curr->parameter) != NULL && *(curr->parameter)->value.str.val == '\0')) {
 				param_res->ctype = SQL_C_LONG;
 				param_res->param_size = 0;
 				param_res->scale = 0;
@@ -547,8 +547,9 @@ static int stmt_parameter_post_execute(pdo_stmt_t * stmt,
 	 * data is processed correctly.
 	 */
 	if (Z_TYPE_P(curr->parameter) == IS_STRING) {
-		if (param_res->transfer_length == SQL_NULL_DATA) {
-			ZVAL_NULL(curr->parameter);
+		if (param_res->transfer_length < 0 || param_res->transfer_length == SQL_NULL_DATA) {
+			Z_STRLEN_P(curr->parameter) = 0;
+			Z_STRVAL_P(curr->parameter)[0] = '\0';
 		} else if (param_res->transfer_length == 0) {
 			ZVAL_EMPTY_STRING(curr->parameter);
 		} else {
@@ -642,6 +643,7 @@ static int stmt_allocate_column_descriptors(pdo_stmt_t * stmt TSRMLS_DC)
 			  "Unable to allocate column descriptor tables");
 	memset(stmt_res->columns, '\0',
 	   sizeof(column_data) * stmt->column_count);
+
 	return TRUE;
 }
 
@@ -798,6 +800,9 @@ static int informix_stmt_executer(pdo_stmt_t * stmt TSRMLS_DC)
 		}
 	}
 
+	/* Set the last serial id inserted */
+	record_last_insert_id(stmt->dbh, stmt_res->hstmt);
+
 	/* we can turn off the cleanup flag now */
 	stmt_res->executing = 0;
 
@@ -854,7 +859,10 @@ static int informix_stmt_fetcher(pdo_stmt_t * stmt,
 			SQLCloseCursor(stmt_res->hstmt);
 		}
 		return FALSE;
+	} else if (rc == SQL_ERROR) {
+		return FALSE;
 	}
+
 	return TRUE;
 }
 
@@ -1106,7 +1114,6 @@ static int informix_stmt_get_column_meta(pdo_stmt_t * stmt,
 
 	MAKE_STD_ZVAL(flags);
 	array_init(flags);
-
 	add_assoc_bool(flags, "not_null", !col_res->nullable);
 
 	/* see if we can retrieve the unsigned attribute */
@@ -1197,6 +1204,32 @@ static int informix_stmt_set_attribute(pdo_stmt_t * stmt,
 				/* the -1 return does not raise an error immediately. */
 			}
 	}
+}
+
+int record_last_insert_id(pdo_dbh_t * dbh, SQLHANDLE hstmt TSRMLS_DC)
+{
+	SQLINTEGER diag_func_type;
+	int rc;
+	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
+
+	rc = SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 0, SQL_DIAG_DYNAMIC_FUNCTION_CODE, &diag_func_type, 0, NULL);
+
+	if(rc == SQL_ERROR)
+	{
+		conn_res->last_insert_id = 0;
+		return SQL_ERROR;
+	}
+	if (diag_func_type == SQL_DIAG_INSERT)
+	{
+		rc = SQLGetStmtOption(hstmt, SQL_GET_SERIAL_VALUE, &conn_res->last_insert_id);
+
+		if(rc == SQL_ERROR)
+		{
+			conn_res->last_insert_id = 0;
+			return SQL_ERROR;
+		}
+	}
+	return TRUE;
 }
 
 struct pdo_stmt_methods informix_stmt_methods = {

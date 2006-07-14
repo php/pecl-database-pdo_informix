@@ -65,7 +65,6 @@ int informix_stmt_dtor(pdo_stmt_t * stmt TSRMLS_DC);
 	if ( rc == SQL_ERROR )			\
 	{								\
 		RAISE_STMT_ERROR(tag);		\
-		return FALSE;				\
 	}								\
 }									\
 
@@ -104,6 +103,7 @@ typedef struct _conn_handle_struct {
 	SQLHANDLE henv;		/* handle to the interface environment */
 	SQLHANDLE hdbc;		/* the connection handle */
 	conn_error_data error_data;	/* error handling information */
+	int last_insert_id;	/* the last serial id inserted */
 } conn_handle;
 
 /* values used for binding fetched data */
