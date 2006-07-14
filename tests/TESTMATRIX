@@ -36,6 +36,8 @@ informix_handle_set_attribute   | set attributes  (NO IMPL)         |   fvt_020,
     -> ATTR_FETCH_TABLE_NAMES   |                                   |
                                -+-                                 -+-
 informix_handle_factory         | open connection                   |   fvt_001,fvt_003,fvt_004
+                               -+-                                 -+-
+informix_handle_lastInsertID    | get last serial inserted          |   fvt_019
 ================================|===================================|==================
 informix_stmt_dtor              | close statement                   |
 informix_stmt_executer          | execute                           |   fvt_031
