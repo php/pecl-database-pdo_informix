@@ -32,8 +32,8 @@ pdo_informix: Insert/select text/byte columns with binding to local variable or 
 			print "succesful\n";
 
 			print "inserting from php file stream\n";
-			$fp1 = fopen( "clob.dat" , "rb" );
-			$fp2 = fopen( "spook.png" , "rb" );
+			$fp1 = fopen( dirname(__FILE__) . "/clob.dat" , "rb" );
+			$fp2 = fopen( dirname(__FILE__) . "/spook.png" , "rb" );
 			$stmt = $this->db->prepare('insert into animals (id,my_clob,my_blob) values (:id,:my_clob,:my_blob)');
 			$stmt->bindValue( ':id' , 1 );
 			$stmt->bindParam( ':my_clob' , $fp1 , PDO::PARAM_LOB );

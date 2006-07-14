@@ -21,7 +21,7 @@ pdo_informix: Insert and retrieve a very large blob file. (byte column)
 			$create = 'CREATE TABLE animals (id INTEGER, my_blob byte)';
 			$result = $this->db->exec( $create );
 
-            $fp = fopen( "large_blob.dat" , "rb" );
+            $fp = fopen( dirname(__FILE__) . "/large_blob.dat" , "rb" );
 			$stmt = $this->db->prepare('insert into animals (id,my_blob) values (:id,:my_blob)');
 			print "inserting from file stream\n";
 			$stmt->bindValue( ':id' , 0 );
@@ -38,7 +38,7 @@ pdo_informix: Insert and retrieve a very large blob file. (byte column)
 			while ($stmt->fetch(PDO::FETCH_BOUND)) {
 				var_dump( $id );
 				var_dump( $blob );
-                $fp = fopen( "large_blob_out.dat" , "wb" );
+                $fp = fopen( dirname(__FILE__) . "/large_blob_out.dat" , "wb" );
                 echo "datalength: " . stream_copy_to_stream( $blob , $fp ) . "\n";
                 system( "diff large_blob.dat large_blob_out.dat" );
 			}

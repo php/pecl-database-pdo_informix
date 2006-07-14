@@ -21,7 +21,7 @@ pdo_informix: Insert and retrieve a very large clob file. (text column)
 			$create = 'CREATE TABLE animals (id INTEGER, my_clob text)';
 			$result = $this->db->exec( $create );
 
-            $fp = fopen( "large_clob.dat" , "r" );
+            $fp = fopen( dirname(__FILE__) . "/large_clob.dat" , "r" );
 			$stmt = $this->db->prepare('insert into animals (id,my_clob) values (:id,:my_clob)');
 			print "inserting from file stream\n";
 			$stmt->bindValue( ':id' , 0 );
@@ -38,7 +38,7 @@ pdo_informix: Insert and retrieve a very large clob file. (text column)
 			while ($stmt->fetch(PDO::FETCH_BOUND)) {
 				var_dump( $id );
 				var_dump( $clob );
-                $fp = fopen( "large_clob_out.dat" , "w" );
+                $fp = fopen( dirname(__FILE__) . "/large_clob_out.dat" , "w" );
                 echo "datalength: " . stream_copy_to_stream( $clob , $fp ) . "\n";
                 system( "diff large_clob.dat large_clob_out.dat" );
 			}
