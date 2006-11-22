@@ -4,21 +4,23 @@ pdo_informix: Count number of affected rows - Select
 <?php require_once('skipif.inc'); ?>
 --FILE--
 <?php
-    require_once('fvt.inc');
-    class Test extends FVTTest {
-        public function runTest(){
-            $this->connect();
-            $this->prepareDB();
+	require_once('fvt.inc');
+	class Test extends FVTTest
+	{
+		public function runTest()
+		{
+			$this->connect();
+			$this->prepareDB();
 
-            $stmt = $this->db->query( "SELECT name FROM animals WHERE weight < 10.0" );
-            print $stmt->rowCount() . "\n";
-            echo "Number of rows: " . count( $stmt->fetchAll() ) . "\n";
-            $stmt->closeCursor();
-        }
-    }
+			$stmt = $this->db->query( "SELECT name FROM animals WHERE weight < 10.0" );
+			print $stmt->rowCount() . "\n";
+			echo "Number of rows: " . count( $stmt->fetchAll() ) . "\n";
+			$stmt->closeCursor();
+		}
+	}
 
-    $testcase = new Test();
-    $testcase->runTest();
+	$testcase = new Test();
+	$testcase->runTest();
 ?>
 --EXPECT--
 -1

@@ -1,5 +1,5 @@
 --TEST--
-pdo_informix: Insert and retrieve a very large clob file. (text column)
+pdo_informix: Insert and retrieve a very large clob file.
 --SKIPIF--
 <?php require_once('skipif.inc'); ?>
 --FILE--
@@ -32,14 +32,14 @@ pdo_informix: Insert and retrieve a very large clob file. (text column)
 			print "runnign query\n";
 			$stmt = $this->db->prepare( 'select id,my_clob from animals' );
 
-			$stmt->bindColumn( 'id' , $id );
-			$stmt->bindColumn( 'my_clob' , $clob , PDO::PARAM_LOB );
+			$stmt->bindColumn( 'ID' , $id );
+			$stmt->bindColumn( 'MY_CLOB' , $clob , PDO::PARAM_LOB );
 			$rs = $stmt->execute();
 			while ($stmt->fetch(PDO::FETCH_BOUND)) {
 				var_dump( $id );
 				var_dump( $clob );
                 $fp = fopen( dirname(__FILE__) . "/large_clob_out.dat" , "w" );
-                echo "datalength: " . stream_copy_to_stream( $clob , $fp ) . "\n";
+				fwrite($fp , $clob);
                 system( "diff large_clob.dat large_clob_out.dat" );
 			}
 			print "done\n";
@@ -54,6 +54,5 @@ inserting from file stream
 succesful
 runnign query
 string(1) "0"
-resource(%i) of type (stream)
-datalength: 60044
+string(60044) %s
 done

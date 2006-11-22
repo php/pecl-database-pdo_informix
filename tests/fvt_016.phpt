@@ -21,9 +21,10 @@ pdo_informix: Insert integer by binding an empty string, a NULL, and an integer 
 			$create = 'CREATE TABLE animals (id INTEGER)';
 			$result = $this->db->exec( $create );
 
-			$null         = NULL;
-			$empty_string = "";
-			$int_string   = "0";
+			$null          = NULL;
+			$empty_string0 = "";
+			$empty_string1 = "";
+			$int_string    = "0";
 
 			$sql  = "INSERT INTO animals VALUES ( :mynull0 ) ";
 			$stmt = $this->db->prepare ( $sql );
@@ -51,7 +52,7 @@ pdo_informix: Insert integer by binding an empty string, a NULL, and an integer 
 
 			$sql  = "INSERT INTO animals VALUES ( :myemptystring0 ) ";
 			$stmt = $this->db->prepare ( $sql );
-			$stmt->bindParam ( ":myemptystring0" , $empty_string );
+			$stmt->bindParam ( ":myemptystring0" , $empty_string0);
 			$stmt->execute();
 			$stmt = $this->db->query( "SELECT * FROM animals" );
 			$res  = $stmt->fetch( PDO::FETCH_BOTH );
@@ -63,7 +64,7 @@ pdo_informix: Insert integer by binding an empty string, a NULL, and an integer 
 
 			$sql  = "INSERT INTO animals VALUES ( :myemptystring1 ) ";
 			$stmt = $this->db->prepare ( $sql );
-			$stmt->bindParam ( ":myemptystring1" , $null, PDO::PARAM_INT );
+			$stmt->bindParam ( ":myemptystring1" , $empty_string1, PDO::PARAM_INT );
 			$stmt->execute();
 			$stmt = $this->db->query( "SELECT * FROM animals" );
 			$res  = $stmt->fetch( PDO::FETCH_BOTH );

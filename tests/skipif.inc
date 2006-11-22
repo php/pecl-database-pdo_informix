@@ -1,5 +1,6 @@
 <?php
-if (!extension_loaded('pdo_informix')) {
-    die('skip');
+if (!extension_loaded('pdo_informix'))
+{
+	die('skip');
 }
 ?>

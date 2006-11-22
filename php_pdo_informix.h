@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | (C) Copyright IBM Corporation 2005.                                  |
+  | (C) Copyright IBM Corporation 2006.                                  |
   +----------------------------------------------------------------------+
   |                                                                      |
   | Licensed under the Apache License, Version 2.0 (the "License"); you  |
@@ -45,7 +45,7 @@ PHP_FUNCTION(confirm_pdo_informix_compiled);	/* For testing, remove later. */
 
 /* 
 	Declare any global variables you may need between the BEGIN
-	and END macros here:	 
+	and END macros here:     
 
 ZEND_BEGIN_MODULE_GLOBALS(pdo_informix)
 	long  global_value;
@@ -70,14 +70,4 @@ ZEND_END_MODULE_GLOBALS(pdo_informix)
 #define PDO_INFORMIX_G(v) (pdo_informix_globals.v)
 #endif
 
-#endif				/* PHP_PDO_INFORMIX_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
+#endif	/* PHP_PDO_INFORMIX_H */

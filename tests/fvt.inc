@@ -40,7 +40,8 @@
 		{
 			$this->db = new PDO($this->dsn,$this->user,$this->pass,array( PDO::ATTR_AUTOCOMMIT => $autoCommit ));
 			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$this->db->setAttribute(PDO::ATTR_CASE, PDO::CASE_LOWER);
+			$this->db->setAttribute(PDO::ATTR_CASE, PDO::CASE_UPPER);
+			$this->db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, true);
 			return $this->db;
 		}
         

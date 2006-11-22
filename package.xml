@@ -64,6 +64,9 @@
     <file name="fvt_013.phpt" role="test" />
     <file name="fvt_014.phpt" role="test" />
     <file name="fvt_015.phpt" role="test" />
+    <file name="fvt_016.phpt" role="test" />
+    <file name="fvt_017.phpt" role="test" />
+    <file name="fvt_017b.phpt" role="test" />
     <file name="fvt_019.phpt" role="test" />
     <file name="fvt_020.phpt" role="test" />
     <file name="fvt_021.phpt" role="test" />
@@ -71,13 +74,10 @@
     <file name="fvt_023.phpt" role="test" />
     <file name="fvt_030.phpt" role="test" />
     <file name="fvt_031.phpt" role="test" />
+    <file name="fvt_49872.phpt" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="spook.png" role="test" />
     <file name="clob.dat" role="test" />
-    <file name="fvt_016.phpt" role="test" />
-    <file name="fvt_017.phpt" role="test" />
-    <file name="fvt_017b.phpt" role="test" />
-    <file name="fvt_49872.phpt" role="test" />
     <file name="large_blob.dat" role="test" />
     <file name="large_clob.dat" role="test" />
    </dir>

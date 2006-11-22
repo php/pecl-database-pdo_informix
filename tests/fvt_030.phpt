@@ -4,25 +4,28 @@ pdo_informix: PDOStatement::fetch()
 <?php require_once('skipif.inc'); ?>
 --FILE--
 <?php
-    require_once('fvt.inc');
-    class Test extends FVTTest {
-        public function runTest(){
-            $this->connect();
-            $this->prepareDB();
-            
-            $stmt = $this->db->query( "SELECT id, breed, name, weight FROM animals WHERE id = 0" );
-            while( $row = $stmt->fetch( PDO::FETCH_BOTH ) ){
-                $breed = $row[1];
-                var_dump( $breed );
-                $name = $row["name"];
-                var_dump( $name );
-            }
-            $stmt->closeCursor();
-        }
-    }
+	require_once('fvt.inc');
+	class Test extends FVTTest
+	{
+		public function runTest()
+		{
+			$this->connect();
+			$this->prepareDB();
 
-    $testcase = new Test();
-    $testcase->runTest();
+			$stmt = $this->db->query( "SELECT id, breed, name, weight FROM animals WHERE id = 0" );
+			while( $row = $stmt->fetch( PDO::FETCH_BOTH ) )
+			{
+    			$breed = $row[1];
+    			var_dump( $breed );
+    			$name = $row["NAME"];
+    			var_dump( $name );
+			}
+			$stmt->closeCursor();
+		}
+	}
+
+	$testcase = new Test();
+	$testcase->runTest();
 ?>
 --EXPECT--
 string(3) "cat"

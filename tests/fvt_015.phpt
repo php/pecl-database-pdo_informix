@@ -1,5 +1,5 @@
 --TEST--
-pdo_informix: Insert/select text/byte columns with binding to local variable or stream
+pdo_informix: Insert/select clob/blob columns with binding to local variable or stream
 --SKIPIF--
 <?php require_once('skipif.inc'); ?>
 --FILE--
@@ -19,7 +19,7 @@ pdo_informix: Insert/select text/byte columns with binding to local variable or 
 
 			/* Create the test table */
 			$create = 'CREATE TABLE animals (id INTEGER, my_clob text, my_blob byte)';
-			$result = $this->db->exec( $create );
+			$res = $this->db->exec( $create );
 
 			$stmt = $this->db->prepare('insert into animals (id,my_clob,my_blob) values (:id,:my_clob,:my_blob)');
 			$clob = "test clob data\n";
@@ -29,7 +29,13 @@ pdo_informix: Insert/select text/byte columns with binding to local variable or 
 			$stmt->bindParam( ':my_clob' , $clob , PDO::PARAM_LOB , strlen($clob) );
 			$stmt->bindParam( ':my_blob' , $blob , PDO::PARAM_LOB , strlen($blob) );
 			$stmt->execute();
-			print "succesful\n";
+
+			$stmt = $this->db->prepare( 'select id,my_clob,my_blob from animals' );
+			$res = $stmt->execute();
+			$res = $stmt->fetchAll();
+			var_dump( $res );
+
+			$res = $this->db->exec( "DELETE FROM animals" );
 
 			print "inserting from php file stream\n";
 			$fp1 = fopen( dirname(__FILE__) . "/clob.dat" , "rb" );
@@ -39,23 +45,24 @@ pdo_informix: Insert/select text/byte columns with binding to local variable or 
 			$stmt->bindParam( ':my_clob' , $fp1 , PDO::PARAM_LOB );
 			$stmt->bindParam( ':my_blob' , $fp2 , PDO::PARAM_LOB );
 			$stmt->execute();
-			print "succesful\n";
 
-			print "runnign query\n";
 			$stmt = $this->db->prepare( 'select id,my_clob,my_blob from animals' );
-			$rs = $stmt->execute();
+			$res = $stmt->execute();
 			$res = $stmt->fetchAll();
 			var_dump( $res );
 
-			$stmt->bindColumn( 'id' , $id );
-			$stmt->bindColumn( 'my_clob' , $clob , PDO::PARAM_LOB );
-			$stmt->bindColumn( 'my_blob' , $blob , PDO::PARAM_LOB );
-			$rs = $stmt->execute();
+			$stmt = $this->db->prepare( 'select id,my_clob,my_blob from animals' );
+			$stmt->bindColumn( 1 , $id );
+			$stmt->bindColumn( 2 , $clob );
+			$stmt->bindColumn( 3 , $blob );
+			$res = $stmt->execute();
 			while ($stmt->fetch(PDO::FETCH_BOUND)) {
 				var_dump( $id );
 				var_dump( $clob );
 				var_dump( $blob );
 			}
+
+
 			print "done\n";
 		}
 	}
@@ -65,46 +72,60 @@ pdo_informix: Insert/select text/byte columns with binding to local variable or 
 ?>
 --EXPECTF--
 inserting from php variable
-succesful
-inserting from php file stream
-succesful
-runnign query
-array(2) {
+array(1) {
   [0]=>
   array(6) {
-    ["id"]=>
+    ["ID"]=>
     string(1) "0"
     [0]=>
     string(1) "0"
-    ["my_clob"]=>
-    resource(%i) of type (stream)
+    ["MY_CLOB"]=>
+    string(15) "test clob data
+"
     [1]=>
-    resource(%i) of type (stream)
-    ["my_blob"]=>
-    resource(%i) of type (stream)
+    string(15) "test clob data
+"
+    ["MY_BLOB"]=>
+    string(%d)%s
     [2]=>
-    resource(%i) of type (stream)
-  }
-  [1]=>
-  array(6) {
-    ["id"]=>
-    string(1) "1"
-    [0]=>
-    string(1) "1"
-    ["my_clob"]=>
-    resource(%i) of type (stream)
-    [1]=>
-    resource(%i) of type (stream)
-    ["my_blob"]=>
-    resource(%i) of type (stream)
-    [2]=>
-    resource(%i) of type (stream)
+    string(%d)%s
   }
 }
-string(1) "0"
-resource(%i) of type (stream)
-resource(%i) of type (stream)
+inserting from php file stream
+array(1) {
+  [0]=>
+  array(6) {
+    ["ID"]=>
+    string(1) "1"
+    [0]=>
+    string(1) "1"
+    ["MY_CLOB"]=>
+    string(5140) "this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+"
+    [1]=>
+    string(5140) "this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+"
+    ["MY_BLOB"]=>
+    string(%d)%s
+    [2]=>
+    string(%d)%s
+  }
+}
 string(1) "1"
-resource(%i) of type (stream)
-resource(%i) of type (stream)
+string(5140) "this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.  this iss clob data.
+"
+string(%d)%s
 done
+

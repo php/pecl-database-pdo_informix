@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | (C) Copyright IBM Corporation 2005.                                  |
+  | (C) Copyright IBM Corporation 2006.                                  |
   +----------------------------------------------------------------------+
   |                                                                      |
   | Licensed under the Apache License, Version 2.0 (the "License"); you  |
@@ -35,7 +35,7 @@ ZEND_DECLARE_MODULE_GLOBALS(pdo_informix)
 
 /* True global resources - no need for thread safety here */
 static int le_pdo_informix;
-extern pdo_driver_t pdo_informix_driver;   /* the registration table */
+extern pdo_driver_t pdo_informix_driver;	/* the registration table */
 
 /* {{{ pdo_informix_functions[]
  *
@@ -43,10 +43,10 @@ extern pdo_driver_t pdo_informix_driver;   /* the registration table */
  */
 function_entry pdo_informix_functions[] =
 {
-	PHP_FE(confirm_pdo_informix_compiled,   NULL)		   /* For testing, remove later. */
+	PHP_FE(confirm_pdo_informix_compiled, NULL)	/* For testing, remove later. */
 	{
 		NULL, NULL, NULL
-	}	  /* Must be the last line in pdo_informix_functions[] */
+	}	/* Must be the last line in pdo_informix_functions[] */
 };
 /* }}} */
 
@@ -61,11 +61,11 @@ zend_module_entry pdo_informix_module_entry =
 	pdo_informix_functions,
 	PHP_MINIT(pdo_informix),
 	PHP_MSHUTDOWN(pdo_informix),
-	PHP_RINIT(pdo_informix),		/* Replace with NULL if there's nothing to do at request start */
+	PHP_RINIT(pdo_informix),	/* Replace with NULL if there's nothing to do at request start */
 	PHP_RSHUTDOWN(pdo_informix),	/* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(pdo_informix),
 #if ZEND_MODULE_API_NO >= 20010901
-	"1.0.1",						/* Replace with version number for your extension */
+	"1.0.1",	/* Replace with version number for your extension */
 #endif
 	STANDARD_MODULE_PROPERTIES
 };
@@ -79,7 +79,7 @@ ZEND_GET_MODULE(pdo_informix)
  */
 /* Remove comments and fill if you need to have entries in php.ini
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("pdo_informix.global_value",	  "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_pdo_informix_globals, pdo_informix_globals)
+	STD_PHP_INI_ENTRY("pdo_informix.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_pdo_informix_globals, pdo_informix_globals)
 	STD_PHP_INI_ENTRY("pdo_informix.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_pdo_informix_globals, pdo_informix_globals)
 PHP_INI_END()
 */
@@ -178,19 +178,3 @@ PHP_FUNCTION(confirm_pdo_informix_compiled)
 	RETURN_STRINGL(string, len, 1);
 }
 /* }}} */
-/* The previous line is meant for vim and emacs, so it can correctly fold and
-   unfold functions in source code. See the corresponding marks just before
-   function definition, where the functions purpose is also documented. Please
-   follow this convention for the convenience of others editing your code.
-*/
-
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

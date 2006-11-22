@@ -32,8 +32,8 @@ pdo_informix: Insert and retrieve a very large blob file. (byte column)
 			print "runnign query\n";
 			$stmt = $this->db->prepare( 'select id,my_blob from animals' );
 
-			$stmt->bindColumn( 'id' , $id );
-			$stmt->bindColumn( 'my_blob' , $blob , PDO::PARAM_LOB );
+			$stmt->bindColumn( 'ID' , $id );
+			$stmt->bindColumn( 'MY_BLOB' , $blob , PDO::PARAM_LOB );
 			$rs = $stmt->execute();
 			while ($stmt->fetch(PDO::FETCH_BOUND)) {
 				var_dump( $id );
@@ -54,6 +54,5 @@ inserting from file stream
 succesful
 runnign query
 string(1) "0"
-resource(%i) of type (stream)
-datalength: 10000
+string(4966) %s
 done
