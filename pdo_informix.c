@@ -65,7 +65,7 @@ zend_module_entry pdo_informix_module_entry =
 	PHP_RSHUTDOWN(pdo_informix),	/* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(pdo_informix),
 #if ZEND_MODULE_API_NO >= 20010901
-	"1.0.1",	/* Replace with version number for your extension */
+	MODULE_RELEASE,	/* Replace with version number for your extension */
 #endif
 	STANDARD_MODULE_PROPERTIES
 };
