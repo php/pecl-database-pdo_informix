@@ -1232,7 +1232,7 @@ int record_last_insert_id(pdo_dbh_t * dbh, SQLHANDLE hstmt TSRMLS_DC)
 	}
 	if (diag_func_type == SQL_DIAG_INSERT)
 	{
-		rc = SQLGetStmtOption(hstmt, SQL_GET_SERIAL_VALUE, &conn_res->last_insert_id);
+		rc = SQLGetStmtAttr(hstmt, SQL_GET_SERIAL_VALUE, &conn_res->last_insert_id, SQL_IS_INTEGER, NULL);
 
 		if(rc == SQL_ERROR)
 		{
