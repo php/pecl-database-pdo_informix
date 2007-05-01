@@ -30,7 +30,6 @@ pdo_informix: Scrollable cursor; retrieve negative row
 					print $e . "\n";
 				}
 			}
-			$stmt->closeCursor();
 		}
 	}
 
