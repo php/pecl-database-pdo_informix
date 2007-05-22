@@ -12,7 +12,7 @@ pdo_informix: Check error condition when given null connection parameters
 			try {
 				$my_null = NULL;
 				$new_conn = new PDO($my_null, $this->user, $this->pass);
-            } catch(Exception $e) {
+			} catch(Exception $e) {
 				echo "Connection Failed\n";
 				echo $e->getMessage() . "\n\n";
 			}
@@ -20,7 +20,7 @@ pdo_informix: Check error condition when given null connection parameters
 			try {
 				$my_null = NULL;
 				$new_conn = new PDO($this->dsn, $my_null, $this->pass);
-            } catch(Exception $e) {
+			} catch(Exception $e) {
 				echo "Connection Failed\n";
 				echo $e->getMessage() . "\n";
 			}
@@ -28,7 +28,7 @@ pdo_informix: Check error condition when given null connection parameters
 			try {
 				$my_null = NULL;
 				$new_conn = new PDO($this->dsn, $this->user, $my_null);
-            } catch(Exception $e) {
+			} catch(Exception $e) {
 				echo "Connection Failed\n";
 				echo $e->getMessage();
 			}
@@ -43,7 +43,7 @@ Connection Failed
 invalid data source name
 
 Connection Failed
-SQLSTATE=28000, SQLDriverConnect: -951 [%s][%s][Informix]Incorrect password or user %s is not known on the database server.
+SQLSTATE=28000, SQL%sonnect: -951 [%s][%s][Informix]Incorrect password or user %s is not known on the database server.
 Connection Failed
-SQLSTATE=28000, SQLDriverConnect: -951 [%s][%s][Informix]Incorrect password or user %s is not known on the database server.
+SQLSTATE=28000, SQL%sonnect: -951 [%s][%s][Informix]Incorrect password or user %s is not known on the database server.
 
