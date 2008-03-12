@@ -18,6 +18,7 @@ pdo_informix: Insert/select clob/blob columns with binding to local variable or 
 			} catch( Exception $e ){}
 
 			/* Create the test table */
+			$server_info = $this->db->getAttribute(PDO::ATTR_SERVER_INFO);
 			$create = 'CREATE TABLE animals (id INTEGER, my_clob text, my_blob byte)';
 			$res = $this->db->exec( $create );
 
@@ -128,4 +129,3 @@ this iss clob data.  this iss clob data.  this iss clob data.  this iss clob dat
 "
 string(%d)%s
 done
-

@@ -11,10 +11,10 @@ pdo_informix: Test error conditions through non-existent tables
 		{
 			$this->connect();
 			$sql = "CREATE TABLE testError(" .
-	   			    "id INTEGER," .
-	       			"data VARCHAR(50)," .
-	       			"attachment VARCHAR(50)," .
-	       			"about VARCHAR(50))";
+				"id INTEGER," .
+				"data VARCHAR(50)," .
+				"attachment VARCHAR(50)," .
+				"about VARCHAR(50))";
 
 			try {
 				$stmt = $this->db->prepare($sql);
@@ -44,11 +44,12 @@ pdo_informix: Test error conditions through non-existent tables
 ?>
 --EXPECTF--
 Error code:
-42000
+42S02
 Error info:
 Array
 (
-    [0] => 42000
-    [1] => -201
-    [2] => [Informix][Informix ODBC Driver][Informix]A syntax error has occurred. (SQLPrepare[-201] at %s)
+    [0] => 42S02
+    [1] => -206
+    [2] => [Informix][Informix ODBC Driver][Informix]The specified table (informix.testerror) is not in the database. (SQLPrepare[-206] at %s)
 )
+

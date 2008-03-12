@@ -35,7 +35,7 @@ pdo_informix: Check error code.
 	$testcase = new Test();
 	$testcase->runTest();
 ?>
---EXPECT--
+--EXPECTF--
 PDOStatement::errorCode(): 42S02
 PDOStatement::errorCode(): 42S22
 PDOStatement::errorCode(): 42S22
