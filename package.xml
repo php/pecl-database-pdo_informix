@@ -18,15 +18,17 @@
  </maintainers>
 
  <release>
-  <version>1.1.0</version>
-  <date>2007-02-13</date>
+  <version>1.2.0</version>
+  <date>2008-03-13</date>
   <license>Apache License 2.0</license>
   <state>stable</state>
   <notes>
-    Fixed internal bug regarding wrong getAttribute information
-    Fixed internal bug regarding error description not being cleared
-    Fixed internal bug regarding an issue found when faulty SQL is issued
-    Fixed internal bug regarding float data type issues
+	Added feature to allow set attribute and quote.
+	Problem with LOBs has been fixed.
+	Segfault when using invalid query with deferred prepare has been fixed.
+	Fixed PDO exec API. It return succuss/failure if no rows need to be returned.
+	Fixed PDO_INFORMIX variable declarations location problem on Windows.
+	Fixed problem with Statement execution (Not throwing an exception).
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
@@ -64,19 +66,33 @@
     <file name="fvt_016.phpt" role="test" />
     <file name="fvt_017.phpt" role="test" />
     <file name="fvt_017b.phpt" role="test" />
+    <file name="fvt_017c.phpt" role="test" />
+    <file name="fvt_018.phpt" role="test" />
     <file name="fvt_019.phpt" role="test" />
     <file name="fvt_020.phpt" role="test" />
     <file name="fvt_021.phpt" role="test" />
     <file name="fvt_022.phpt" role="test" />
     <file name="fvt_023.phpt" role="test" />
+    <file name="fvt_024.phpt" role="test" />
+    <file name="fvt_025.phpt" role="test" />
+    <file name="fvt_026.phpt" role="test" />
+    <file name="fvt_027.phpt" role="test" />
     <file name="fvt_030.phpt" role="test" />
     <file name="fvt_031.phpt" role="test" />
+    <file name="fvt_032.phpt" role="test" />
+    <file name="fvt_033.phpt" role="test" />
+    <file name="fvt_034.phpt" role="test" />
+    <file name="fvt_035.phpt" role="test" />
+    <file name="fvt_036.phpt" role="test" />
+    <file name="fvt_038.phpt" role="test" />
+    <file name="fvt_040.phpt" role="test" />
     <file name="fvt_49872.phpt" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="spook.png" role="test" />
     <file name="clob.dat" role="test" />
     <file name="large_blob.dat" role="test" />
     <file name="large_clob.dat" role="test" />
+    <file name="TESTMATRIX" role="test" />
    </dir>
   </filelist>
  </release>

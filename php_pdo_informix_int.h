@@ -33,6 +33,18 @@
 #define SQL_XML -370
 #endif
 
+/* Maximum length of the name of the DBMS being accessed */
+#define MAX_DBMS_IDENTIFIER_NAME 256
+
+
+#ifndef SQL_ATTR_GET_GENERATED_VALUE
+#define SQL_ATTR_GET_GENERATED_VALUE 2583
+#endif
+
+/* This function is called after executing a stmt for recording lastInsertId */
+int record_last_insert_id( pdo_dbh_t *dbh, SQLHANDLE hstmt TSRMLS_DC);
+
+
 /* error handling functions and macros. */
 void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle, SQLSMALLINT hType, char *tag, char *file, int line TSRMLS_DC);
 void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *tag, char *message, char *file, int line TSRMLS_DC);

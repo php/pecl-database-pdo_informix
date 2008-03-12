@@ -66,12 +66,12 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 	check_stmt_error(rc, "SQLGetData");
 
 	if (readBytes == -1)	/*For NULL CLOB/BLOB values */
-	return (size_t) readBytes;
-	if (readBytes > count)
-	if (col_res->data_type == SQL_LONGVARCHAR)	/*Dont return the NULL at end of CLOB buffer */
-		readBytes = count - 1;
-	else
-		readBytes = count;
+	   return (size_t) readBytes;
+   if (readBytes > count)
+   if (col_res->data_type == SQL_LONGVARCHAR)   /*Dont return the NULL at end of CLOB buffer */
+      readBytes = count - 1;
+   else
+      readBytes = count;
 	return (size_t) readBytes;
 }
 
@@ -116,7 +116,12 @@ php_stream* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int co
 	data->colno = colno;
 	col_res = &data->stmt_res->columns[data->colno];
 	retval = (php_stream *) php_stream_alloc(&lob_stream_ops, data, NULL, "r");
-	return retval;
+	/* Find out if the column contains NULL data */
+	if (lob_stream_read(retval, NULL, 0 TSRMLS_CC) == SQL_NULL_DATA) {
+		php_stream_close(retval);
+		return NULL;
+	} else
+		return retval;
 }
 
 /*
@@ -368,8 +373,8 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 			}
 			if (Z_TYPE_P(curr->parameter) == IS_NULL
 					|| (is_num && Z_STRVAL_P(curr->parameter) != NULL
-					&& *(curr->parameter)->value.str.val == '\0')) {
-				param_res->ctype = SQL_C_LONG;
+					&& (Z_STRVAL_P(curr->parameter) == '\0'))) {     
+				   param_res->ctype = SQL_C_LONG;
 				param_res->param_size = 0;
 				param_res->scale = 0;
 				curr->max_value_len = 0;
@@ -812,7 +817,11 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 	}
 
 	/* Set the last serial id inserted */
-	record_last_insert_id(stmt->dbh, stmt_res->hstmt);
+	rc = record_last_insert_id(stmt->dbh, stmt_res->hstmt TSRMLS_CC);
+	if( rc == SQL_ERROR )
+	{
+		return FALSE;
+	}
 
 	/* we can turn off the cleanup flag now */
 	stmt_res->executing = 0;
@@ -1019,8 +1028,11 @@ static int informix_stmt_get_col(
 
 	if (col_res->returned_type == PDO_PARAM_LOB) {
 		php_stream *stream = create_lob_stream(stmt, stmt_res, colno TSRMLS_CC);	/* already opened */
+	if (stream != NULL)
 		*ptr = (char *) stream;
-		*len = 0;
+	else
+		*ptr = NULL;
+	*len = 0;
 	}
 	/* see if this is a null value */
 	else if (col_res->out_length == SQL_NULL_DATA) {

@@ -306,6 +306,12 @@ static long informix_handle_doer(
 		}
 	}
 
+	/* Set the last serial id inserted */
+	rc = record_last_insert_id(dbh, hstmt TSRMLS_CC);
+	if( rc == SQL_ERROR )
+	{
+		return -1;
+	}
 	/* this is a one-shot deal, so make sure we free the statement handle */
 	SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 	return rowCount;
@@ -395,6 +401,7 @@ static char *informix_handle_lastInsertID(pdo_dbh_t * dbh, const char *name, uns
 	*len = strlen(id);
 
 	return id;
+
 }
 
 /* fetch the supplemental error material */
@@ -504,6 +511,10 @@ static int informix_handle_get_attribute(
 	zval *return_value
 	TSRMLS_DC)
 {
+	char server[MAX_DBMS_IDENTIFIER_NAME];
+	int rc;
+	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
+
 	switch (attr) {
 		case PDO_ATTR_CLIENT_VERSION:
 			ZVAL_STRING(return_value, MODULE_RELEASE, 1);
@@ -512,6 +523,13 @@ static int informix_handle_get_attribute(
 		case PDO_ATTR_AUTOCOMMIT:
 			ZVAL_BOOL(return_value, dbh->auto_commit);
 			return TRUE;
+
+		case PDO_ATTR_SERVER_INFO:
+			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)server, MAX_DBMS_IDENTIFIER_NAME, NULL);
+			check_dbh_error(rc, "SQLGetInfo");
+			ZVAL_STRING(return_value, server, 1);
+			return TRUE;
+
 	}
 	return FALSE;
 }
