@@ -308,8 +308,7 @@ static long informix_handle_doer(
 
 	/* Set the last serial id inserted */
 	rc = record_last_insert_id(dbh, hstmt TSRMLS_CC);
-	if( rc == SQL_ERROR )
-	{
+	if( rc == SQL_ERROR ) {
 		return -1;
 	}
 	/* this is a one-shot deal, so make sure we free the statement handle */

@@ -65,13 +65,16 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 	rc = SQLGetData(stmt_res->hstmt, data->colno + 1, ctype, buf, count, &readBytes);
 	check_stmt_error(rc, "SQLGetData");
 
-	if (readBytes == -1)	/*For NULL CLOB/BLOB values */
-	   return (size_t) readBytes;
-   if (readBytes > count)
-   if (col_res->data_type == SQL_LONGVARCHAR)   /*Dont return the NULL at end of CLOB buffer */
-      readBytes = count - 1;
-   else
-      readBytes = count;
+	if (readBytes == -1) {	/*For NULL CLOB/BLOB values */
+		return (size_t) readBytes;
+	}
+	if (readBytes > count) {
+		if (col_res->data_type == SQL_LONGVARCHAR) {  /*Dont return the NULL at end of CLOB buffer */
+			readBytes = count - 1;
+		} else {
+			readBytes = count;
+		}
+	}
 	return (size_t) readBytes;
 }
 
@@ -818,8 +821,7 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 
 	/* Set the last serial id inserted */
 	rc = record_last_insert_id(stmt->dbh, stmt_res->hstmt TSRMLS_CC);
-	if( rc == SQL_ERROR )
-	{
+	if( rc == SQL_ERROR ) {
 		return FALSE;
 	}
 
@@ -1028,11 +1030,12 @@ static int informix_stmt_get_col(
 
 	if (col_res->returned_type == PDO_PARAM_LOB) {
 		php_stream *stream = create_lob_stream(stmt, stmt_res, colno TSRMLS_CC);	/* already opened */
-	if (stream != NULL)
-		*ptr = (char *) stream;
-	else
-		*ptr = NULL;
-	*len = 0;
+		if (stream != NULL) {
+			*ptr = (char *) stream;
+		} else {
+			*ptr = NULL;
+		}
+		*len = 0;
 	}
 	/* see if this is a null value */
 	else if (col_res->out_length == SQL_NULL_DATA) {
@@ -1242,17 +1245,14 @@ int record_last_insert_id(pdo_dbh_t * dbh, SQLHANDLE hstmt TSRMLS_DC)
 
 	rc = SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 0, SQL_DIAG_DYNAMIC_FUNCTION_CODE, &diag_func_type, 0, NULL);
 
-	if(rc == SQL_ERROR)
-	{
+	if(rc == SQL_ERROR) {
 		conn_res->last_insert_id = 0;
 		return SQL_ERROR;
 	}
-	if (diag_func_type == SQL_DIAG_INSERT)
-	{
+	if (diag_func_type == SQL_DIAG_INSERT) {
 		rc = SQLGetStmtAttr(hstmt, SQL_GET_SERIAL_VALUE, &conn_res->last_insert_id, SQL_IS_INTEGER, NULL);
 
-		if(rc == SQL_ERROR)
-		{
+		if(rc == SQL_ERROR) {
 			conn_res->last_insert_id = 0;
 			return SQL_ERROR;
 		}
