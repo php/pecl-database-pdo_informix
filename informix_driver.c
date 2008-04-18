@@ -516,7 +516,7 @@ static int informix_handle_get_attribute(
 
 	switch (attr) {
 		case PDO_ATTR_CLIENT_VERSION:
-			ZVAL_STRING(return_value, MODULE_RELEASE, 1);
+			ZVAL_STRING(return_value, PDO_INFORMIX_VERSION, 1);
 			return TRUE;
 
 		case PDO_ATTR_AUTOCOMMIT:
