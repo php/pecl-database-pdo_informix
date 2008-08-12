@@ -24,9 +24,9 @@ pdo_informix: Select LOBs, including null and 0-length
 
             $data = array (
                 array(1, 'this is the clob that never ends...',
-                         'this is the blob that never ends...'),
-                array(2, null,null),
-                array(3,'','')
+                         'this is the blob that never ends...')
+				,
+                array(2, null,null)
             );
 
 			$stmt = $this->db->prepare('insert into animals (id,my_clob,my_blob) values (?,?,?)');
@@ -75,9 +75,8 @@ string(35) "this is the clob that never ends..."
 string(35) "this is the blob that never ends..."
 int(13)
 string(1) "2"
-NULL
-NULL
-bool(false)
-string(1) "3"
+string(0) ""
+string(0) ""
 bool(false)
 done
+

@@ -41,6 +41,7 @@
 #define SQL_ATTR_GET_GENERATED_VALUE 2583
 #endif
 
+
 /* This function is called after executing a stmt for recording lastInsertId */
 int record_last_insert_id( pdo_dbh_t *dbh, SQLHANDLE hstmt TSRMLS_DC);
 

@@ -18,17 +18,15 @@
  </maintainers>
 
  <release>
-  <version>1.2.0</version>
-  <date>2008-04-18</date>
+  <version>1.2.5</version>
+  <date>2008-08-12</date>
   <license>Apache License 2.0</license>
   <state>stable</state>
   <notes>
-	Added feature to allow set attribute and quote.
-	Problem with LOBs has been fixed.
-	Segfault when using invalid query with deferred prepare has been fixed.
-	Fixed PDO exec API. It return succuss/failure if no rows need to be returned.
-	Fixed PDO_INFORMIX variable declarations location problem on Windows.
-	Fixed problem with Statement execution (Not throwing an exception).
+	Bug of SEGV when execute is used with bind_param on parameter markers BLOB/CLOB type fixed.
+	Problem while inserting NULL in CLOB field.
+	Bug fixed - PDO error info throws SEGV on SQL_SUCCESS.
+	Updating test cases.
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />

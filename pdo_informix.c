@@ -28,6 +28,7 @@
 #include "ext/standard/info.h"
 #include "pdo/php_pdo_driver.h"
 #include "php_pdo_informix.h"
+#include "php_pdo_informix_int.h"
 
 /* If you declare any globals in php_pdo_informix.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(pdo_informix)
@@ -104,6 +105,7 @@ PHP_MINIT_FUNCTION(pdo_informix)
 	ZEND_INIT_MODULE_GLOBALS(pdo_informix, php_pdo_informix_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
 	*/
+
 	
 	php_pdo_register_driver(&pdo_informix_driver);
 	return TRUE;  

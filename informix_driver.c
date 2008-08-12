@@ -169,7 +169,7 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
 static void current_error_state(pdo_dbh_t *dbh)
 {
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
-	printf("Handling error %s (%s[%ld] at %s:%d)\n",
+	printf("Handling error %s (%s[%d] at %s:%d)\n",
 		conn_res->error_data.err_msg,		/* an associated message */
 		conn_res->error_data.failure_name,	/* the routine name */
 		conn_res->error_data.sqlcode,		/* native error code of the failure */
@@ -413,7 +413,12 @@ static int informix_handle_fetch_error(
 	conn_handle *conn_res = (conn_handle *)dbh->driver_data;
 	char suppliment[512];
 
-	sprintf(suppliment, "%s (%s[%ld] at %s:%d)", conn_res->error_data.err_msg,	/*  an associated message */
+	if(conn_res->error_data.failure_name == NULL && conn_res->error_data.filename == NULL) {
+		conn_res->error_data.filename="(null)";
+		conn_res->error_data.failure_name="(null)";
+	}
+
+	sprintf(suppliment, "%s (%s[%d] at %s:%d)", conn_res->error_data.err_msg,	/*  an associated message */
 		conn_res->error_data.failure_name,	/*  the routine name */
 		conn_res->error_data.sqlcode,		/*  native error code of the failure */
 		conn_res->error_data.filename,		/*  source file of the reported error */
@@ -510,9 +515,10 @@ static int informix_handle_get_attribute(
 	zval *return_value
 	TSRMLS_DC)
 {
-	char server[MAX_DBMS_IDENTIFIER_NAME];
+	char value[MAX_DBMS_IDENTIFIER_NAME];
 	int rc;
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
+	SQLINTEGER tc_flag;
 
 	switch (attr) {
 		case PDO_ATTR_CLIENT_VERSION:
@@ -524,10 +530,11 @@ static int informix_handle_get_attribute(
 			return TRUE;
 
 		case PDO_ATTR_SERVER_INFO:
-			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)server, MAX_DBMS_IDENTIFIER_NAME, NULL);
+			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)value, MAX_DBMS_IDENTIFIER_NAME, NULL);
 			check_dbh_error(rc, "SQLGetInfo");
-			ZVAL_STRING(return_value, server, 1);
+			ZVAL_STRING(return_value, value, 1);
 			return TRUE;
+
 
 	}
 	return FALSE;
@@ -581,6 +588,7 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 	rc = SQLAllocHandle(SQL_HANDLE_DBC, conn_res->henv, &(conn_res->hdbc));
 	check_dbh_error(rc, "SQLAllocHandle");
 
+		
 	/*
 	* NB:  We don't have any specific driver options we support at this time, so
 	* we don't need to do any option parsing. If the string contains a =, then
