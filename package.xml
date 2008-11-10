@@ -10,6 +10,12 @@
  <license>Apache License 2.0</license>
  <maintainers>
   <maintainer>
+   <user>ambrish</user>
+   <name>Ambrish Bhargava</name>
+   <email>abhargav@in.ibm.com</email>
+   <role>lead</role>
+  </maintainer>
+  <maintainer>
    <user>kfbombar</user>
    <name>IBM OpenDev</name>
    <email>opendev@us.ibm.com</email>
@@ -18,15 +24,12 @@
  </maintainers>
 
  <release>
-  <version>1.2.5</version>
-  <date>2008-08-12</date>
+  <version>1.2.6</version>
+  <date>2008-11-10</date>
   <license>Apache License 2.0</license>
   <state>stable</state>
   <notes>
-	Bug of SEGV when execute is used with bind_param on parameter markers BLOB/CLOB type fixed.
-	Problem while inserting NULL in CLOB field.
-	Bug fixed - PDO error info throws SEGV on SQL_SUCCESS.
-	Updating test cases.
+	  Fixing defect related value of Interval is right shifted.
   </notes>
   <configureoptions>
    <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />

@@ -596,7 +596,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 	column_data *col_res;
 	struct pdo_column_data *col;
 	int rc;
-	int in_length;
+	int in_length = 1;
 	stmt_res = (stmt_handle *) stmt->driver_data;
 	col_res = &stmt_res->columns[colno];
 	col = &stmt->columns[colno];
@@ -617,6 +617,24 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 			}
 			break;
 		/*
+		* An extra byte is required to hold positive or negative value if the
+		* data type is INTERVAL. That is why we are increasing in_length by 1.
+		*/
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_MONTH:
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_SECOND:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+			in_length = in_length + 1;
+		/*
 		* A form we need to force into a string value...
 		* this includes any unknown types
 		*/
@@ -631,7 +649,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
 		default:
-			in_length = col_res->data_size + 1;
+			in_length = col_res->data_size + in_length;
 			col_res->data.str_val = (char *) emalloc(in_length+1);
 			check_stmt_allocation(col_res->data.str_val,
 					"stmt_bind_column",
