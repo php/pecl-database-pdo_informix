@@ -1,102 +1,119 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<package version="1.0">
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.8.0" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
  <name>PDO_INFORMIX</name>
+ <channel>pecl.php.net</channel>
  <summary>PDO driver for IBM Informix INFORMIX databases</summary>
- <description>
-  This extension provides an IBM Informix Dynamic Server driver for PDO. To build and run
-  PDO_INFORMIX, you must install the Informix Client Software Development Kit (CSDK)
-  from http://ibm.com/informix/downloads.html.
+ <description>This extension provides an IBM Informix Dynamic Server driver for PDO. To build and run
+PDO_INFORMIX, you must install the Informix Client Software Development Kit (CSDK)
+from http://ibm.com/informix/downloads.html.
  </description>
+ <lead>
+  <name>Ambrish Bhargava</name>
+  <user>ambrish</user>
+  <email>abhargav@in.ibm.com</email>
+  <active>yes</active>
+ </lead>
+ <lead>
+  <name>IBM OpenDev</name>
+  <user>kfbombar</user>
+  <email>opendev@us.ibm.com</email>
+  <active>yes</active>
+ </lead>
+ <date>2009-11-06</date>
+ <time>12:26:53</time>
+ <version>
+  <release>1.2.6</release>
+  <api>1.2.6</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
  <license>Apache License 2.0</license>
- <maintainers>
-  <maintainer>
-   <user>ambrish</user>
-   <name>Ambrish Bhargava</name>
-   <email>abhargav@in.ibm.com</email>
-   <role>lead</role>
-  </maintainer>
-  <maintainer>
-   <user>kfbombar</user>
-   <name>IBM OpenDev</name>
-   <email>opendev@us.ibm.com</email>
-   <role>lead</role>
-  </maintainer>
- </maintainers>
-
- <release>
-  <version>1.2.6</version>
-  <date>2008-11-10</date>
-  <license>Apache License 2.0</license>
-  <state>stable</state>
-  <notes>
-	  Fixing defect related value of Interval is right shifted.
-  </notes>
-  <configureoptions>
-   <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
-  </configureoptions>
-  <filelist>
-   <dir name="/" baseinstalldir="pdo_informix" role="src">
-    <file name="CREDITS" role="doc" />
-    <file name="Makefile.frag" role="src" />
-    <file name="config.m4" role="src" />
-    <file name="config.w32" role="src" />
-    <file name="informix_driver.c" role="src" />
-    <file name="informix_statement.c" role="src" />
-    <file name="package.xml" role="src" />
-    <file name="pdo_informix.c" role="src" />
-    <file name="php_pdo_informix.h" role="src" />
-    <file name="php_pdo_informix_int.h" role="src" />
-   </dir>
-   <dir name="tests" role="test">
-    <file name="fvt.inc" role="test" />
-    <file name="fvt_001.phpt" role="test" />
-    <file name="fvt_002.phpt" role="test" />
-    <file name="fvt_003.phpt" role="test" />
-    <file name="fvt_004.phpt" role="test" />
-    <file name="fvt_005.phpt" role="test" />
-    <file name="fvt_006.phpt" role="test" />
-    <file name="fvt_007.phpt" role="test" />
-    <file name="fvt_008.phpt" role="test" />
-    <file name="fvt_009.phpt" role="test" />
-    <file name="fvt_010.phpt" role="test" />
-    <file name="fvt_011.phpt" role="test" />
-    <file name="fvt_012.phpt" role="test" />
-    <file name="fvt_013.phpt" role="test" />
-    <file name="fvt_014.phpt" role="test" />
-    <file name="fvt_015.phpt" role="test" />
-    <file name="fvt_016.phpt" role="test" />
-    <file name="fvt_017.phpt" role="test" />
-    <file name="fvt_017b.phpt" role="test" />
-    <file name="fvt_017c.phpt" role="test" />
-    <file name="fvt_018.phpt" role="test" />
-    <file name="fvt_019.phpt" role="test" />
-    <file name="fvt_020.phpt" role="test" />
-    <file name="fvt_021.phpt" role="test" />
-    <file name="fvt_022.phpt" role="test" />
-    <file name="fvt_023.phpt" role="test" />
-    <file name="fvt_024.phpt" role="test" />
-    <file name="fvt_025.phpt" role="test" />
-    <file name="fvt_026.phpt" role="test" />
-    <file name="fvt_027.phpt" role="test" />
-    <file name="fvt_030.phpt" role="test" />
-    <file name="fvt_031.phpt" role="test" />
-    <file name="fvt_032.phpt" role="test" />
-    <file name="fvt_033.phpt" role="test" />
-    <file name="fvt_034.phpt" role="test" />
-    <file name="fvt_035.phpt" role="test" />
-    <file name="fvt_036.phpt" role="test" />
-    <file name="fvt_038.phpt" role="test" />
-    <file name="fvt_040.phpt" role="test" />
-    <file name="fvt_49872.phpt" role="test" />
-    <file name="skipif.inc" role="test" />
-    <file name="spook.png" role="test" />
-    <file name="clob.dat" role="test" />
-    <file name="large_blob.dat" role="test" />
-    <file name="large_clob.dat" role="test" />
-    <file name="TESTMATRIX" role="test" />
-   </dir>
-  </filelist>
- </release>
- <dep type="php" rel="ge" version="5.0.3" />
- <dep type="pkg" rel="has" version="1.0.0">PDO</dep>
+ <notes>
+Fixing defect related value of Interval is right shifted.
+ </notes>
+ <contents>
+  <dir name="/">
+   <dir name="tests">
+    <file baseinstalldir="pdo_informix" name="clob.dat" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt.inc" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_001.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_002.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_003.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_004.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_005.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_006.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_007.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_008.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_009.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_010.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_011.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_012.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_013.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_014.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_015.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_016.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_017.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_017b.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_017c.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_018.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_019.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_020.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_021.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_022.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_023.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_024.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_025.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_026.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_027.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_030.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_031.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_032.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_033.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_034.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_035.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_036.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_038.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_040.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="fvt_49872.phpt" role="test" />
+    <file baseinstalldir="pdo_informix" name="large_blob.dat" role="test" />
+    <file baseinstalldir="pdo_informix" name="large_clob.dat" role="test" />
+    <file baseinstalldir="pdo_informix" name="skipif.inc" role="test" />
+    <file baseinstalldir="pdo_informix" name="spook.png" role="test" />
+    <file baseinstalldir="pdo_informix" name="TESTMATRIX" role="test" />
+   </dir> <!-- //tests -->
+   <file baseinstalldir="pdo_informix" name="config.m4" role="src" />
+   <file baseinstalldir="pdo_informix" name="config.w32" role="src" />
+   <file baseinstalldir="pdo_informix" name="CREDITS" role="doc" />
+   <file baseinstalldir="pdo_informix" name="informix_driver.c" role="src" />
+   <file baseinstalldir="pdo_informix" name="informix_statement.c" role="src" />
+   <file baseinstalldir="pdo_informix" name="Makefile.frag" role="src" />
+   <file baseinstalldir="pdo_informix" name="package.xml" role="src" />
+   <file baseinstalldir="pdo_informix" name="pdo_informix.c" role="src" />
+   <file baseinstalldir="pdo_informix" name="php_pdo_informix.h" role="src" />
+   <file baseinstalldir="pdo_informix" name="php_pdo_informix_int.h" role="src" />
+  </dir> <!-- / -->
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>5.0.3</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0b1</min>
+   </pearinstaller>
+   <package>
+    <name>PDO</name>
+    <channel>pear.php.net</channel>
+   </package>
+  </required>
+ </dependencies>
+ <providesextension>PDO_INFORMIX</providesextension>
+ <extsrcrelease>
+  <configureoption name="with-pdo-informix" prompt="Informix Client SDK location?" />
+ </extsrcrelease>
 </package>
