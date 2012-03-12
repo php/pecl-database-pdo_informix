@@ -14,8 +14,8 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
-  |                                                                      |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier,  |
+  | Ambrish Bhargava, Rahul Priyadarshi                                  |
   +----------------------------------------------------------------------+
 */
 
@@ -37,6 +37,7 @@ struct lob_stream_data
 	pdo_stmt_t *stmt;
 	int colno;
 };
+
 
 size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 {
@@ -376,7 +377,7 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 			}
 			if (Z_TYPE_P(curr->parameter) == IS_NULL
 					|| (is_num && Z_STRVAL_P(curr->parameter) != NULL
-					&& (Z_STRVAL_P(curr->parameter) == '\0'))) {     
+					&& (Z_STRVAL_P(curr->parameter) == '\0'))) {
 				if (PDO_PARAM_TYPE(curr->param_type) == PDO_PARAM_BOOL ) {
 					param_res->ctype = SQL_C_LONG;
 				} else {
@@ -403,6 +404,8 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 				* gets updated at EXEC_PRE time.
 				*/
 				param_res->transfer_length = 0;
+
+				param_res->param_size = Z_STRLEN_P(curr->parameter);
 
 				/*
 				* Now we need to make sure the string buffer
@@ -469,7 +472,8 @@ int stmt_bind_parameter(pdo_stmt_t *stmt, struct pdo_bound_param_data *curr TSRM
 					inputOutputType, param_res->ctype,
 					param_res->data_type,
 					param_res->param_size, param_res->scale,
-					(SQLPOINTER) curr, 4096,
+					(SQLPOINTER) curr,
+					4096,
 					&param_res->transfer_length);
 			check_stmt_error(rc, "SQLBindParameter");
 			return TRUE;
@@ -753,15 +757,15 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 	*/
 	rc = SQLExecute((SQLHSTMT) stmt_res->hstmt);
 	check_stmt_error(rc, "SQLExecute");
-	
 	/*
 	* Now check if we have indirectly bound parameters. If we do,
 	* then we need to push the data for those parameters into the
 	* processing pipe.
 	*/
-	if(rc == SQL_NEED_DATA)
-	{
+
+	if (rc == SQL_NEED_DATA) {
 		struct pdo_bound_param_data *param;
+
 		/*
 		* Get the associated parameter data.  The bind process should have
 		* stored a pointer to the parameter control block, so we identify
@@ -781,8 +785,7 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 						Z_STRLEN_P(param->parameter));
 				check_stmt_error(rc, "SQLPutData");
 				continue;
-			}
-			else {
+			} else {
 				/*
 				* The LOB is a stream.  This better still be good, else we
 				* can't supply the data.
@@ -801,7 +804,7 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 					check_stmt_allocation(stmt_res->lob_buffer,
 						"stmt_execute", "Unable to allocate parameter data buffer");
 				}
-					/* read a buffer at a time and push into the execution pipe. */
+				/* read a buffer at a time and push into the execution pipe. */
 				for (;;) {
 					len = php_stream_read(stm, stmt_res->lob_buffer, LOB_BUFFER_SIZE);
 					if (len == 0) {
@@ -885,7 +888,7 @@ static int informix_stmt_fetcher(
 	}
 
 	/* go fetch it. */
-	rc = SQLFetchScroll(stmt_res->hstmt, direction, (SQLINTEGER) offset);
+	rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, direction, (SQLINTEGER) offset);
 	check_stmt_error(rc, "SQLFetchScroll");
 
 	/*
@@ -940,7 +943,6 @@ static int informix_stmt_param_hook(
 			/* we're allocating a bound parameter, go do the binding */
 				stmt_bind_parameter(stmt, param TSRMLS_CC);
 				return stmt_parameter_pre_execute(stmt, param TSRMLS_CC);
-
 			case PDO_PARAM_EVT_EXEC_POST:
 				return stmt_parameter_post_execute(stmt, param TSRMLS_CC);
 
@@ -993,7 +995,6 @@ static int informix_stmt_describer(
 	rc = SQLColAttribute(stmt_res->hstmt, colno+1, SQL_DESC_DISPLAY_SIZE,
 			NULL, 0, NULL, &col_res->data_size);
 	check_stmt_error(rc, "SQLColAttribute");
-
 	/*
 	* Make sure we get a name properly.  If the name is too long for our
 	* buffer (which in theory should never happen), allocate a longer one
@@ -1061,6 +1062,22 @@ static int informix_stmt_get_col(
 		/* return this as a real null */
 		*ptr = NULL;
 		*len = 0;
+	}
+	/* see if length is SQL_NTS ("count the length yourself"-value) */
+	else if (col_res->out_length == SQL_NTS) {
+		if (col_res->data.str_val && col_res->data.str_val[0] != '\0') {
+			/* it's not an empty string */
+			*ptr = col_res->data.str_val;
+			*len = strlen(col_res->data.str_val);
+		} else if (col_res->data.str_val && col_res->data.str_val[0] == '\0') {
+			/* it's an empty string */
+			*ptr = col_res->data.str_val;
+			*len = 0;
+		} else {
+			/* it's NULL */
+			*ptr = NULL;
+			*len = 0;
+		}
 	}
 	/* string type...very common */
 	else if (col_res->returned_type == PDO_PARAM_STR) {
@@ -1182,7 +1199,6 @@ static int informix_stmt_get_column_meta(
 		numericAttribute == SQL_TRUE);
 	}
 
-
 	/* add the flags to the result bundle. */
 	add_assoc_zval(return_value, "flags", flags);
 
@@ -1255,6 +1271,7 @@ static int informix_stmt_set_attribute(
 		}
 	}
 }
+
 
 int record_last_insert_id(pdo_dbh_t * dbh, SQLHANDLE hstmt TSRMLS_DC)
 {
