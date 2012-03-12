@@ -11,6 +11,12 @@ PDO_INFORMIX, you must install the Informix Client Software Development Kit (CSD
 from http://ibm.com/informix/downloads.html.
  </description>
  <lead>
+  <name>Rahul Priyadarshi</name>
+  <user>rahulpriyadarshi</user>
+  <email>rahul.priyadarshi@in.ibm.com</email>
+  <active>yes</active>
+ </lead>
+ <lead>
   <name>Ambrish Bhargava</name>
   <user>ambrish</user>
   <email>abhargav@in.ibm.com</email>
@@ -22,11 +28,11 @@ from http://ibm.com/informix/downloads.html.
   <email>opendev@us.ibm.com</email>
   <active>yes</active>
  </lead>
- <date>2009-11-06</date>
- <time>12:26:53</time>
+ <date>2012-03-12</date>
+ <time>16:54:23</time>
  <version>
-  <release>1.2.6</release>
-  <api>1.2.6</api>
+  <release>1.2.7</release>
+  <api>1.2.7</api>
  </version>
  <stability>
   <release>stable</release>
@@ -34,7 +40,8 @@ from http://ibm.com/informix/downloads.html.
  </stability>
  <license>Apache License 2.0</license>
  <notes>
-Fixing defect related value of Interval is right shifted.
+  Fixed: Problem related to dynamic loading
+  Fixed: Compilation error with php-5.4.x
  </notes>
  <contents>
   <dir name="/">
