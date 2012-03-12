@@ -14,8 +14,8 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
-  |                                                                      |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier,  |
+  | Ambrish Bhargava, Rahul Priyadarshi                                  |
   +----------------------------------------------------------------------+
 */
 
@@ -42,7 +42,7 @@ extern pdo_driver_t pdo_informix_driver;	/* the registration table */
  *
  * Every user visible function must have an entry in pdo_informix_functions[].
  */
-function_entry pdo_informix_functions[] =
+zend_function_entry pdo_informix_functions[] =
 {
 	PHP_FE(confirm_pdo_informix_compiled, NULL)	/* For testing, remove later. */
 	{
@@ -51,23 +51,34 @@ function_entry pdo_informix_functions[] =
 };
 /* }}} */
 
+/* {{{ pdo_informix_deps
+ */
+#if ZEND_MODULE_API_NO >= 20041225
+static zend_module_dep pdo_informix_deps[] = {
+	ZEND_MOD_REQUIRED("pdo")
+	{NULL, NULL, NULL}
+};
+#endif
+/* }}} */
+
 /* {{{ pdo_informix_module_entry
  */
 zend_module_entry pdo_informix_module_entry =
 {
-#if ZEND_MODULE_API_NO >= 20010901
+#if ZEND_MODULE_API_NO >= 20041225
+	STANDARD_MODULE_HEADER_EX, NULL,
+	pdo_informix_deps,
+#else
 	STANDARD_MODULE_HEADER,
 #endif
 	"pdo_informix",
 	pdo_informix_functions,
 	PHP_MINIT(pdo_informix),
 	PHP_MSHUTDOWN(pdo_informix),
-	PHP_RINIT(pdo_informix),	/* Replace with NULL if there's nothing to do at request start */
-	PHP_RSHUTDOWN(pdo_informix),	/* Replace with NULL if there's nothing to do at request end */
+	PHP_RINIT(pdo_informix),        /* Replace with NULL if there's nothing to do at request start */
+	PHP_RSHUTDOWN(pdo_informix),    /* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(pdo_informix),
-#if ZEND_MODULE_API_NO >= 20010901
-	PDO_INFORMIX_VERSION,	/* Replace with version number for your extension */
-#endif
+	PDO_INFORMIX_VERSION,   /* Replace with version number for your extension */
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -91,8 +102,8 @@ PHP_INI_END()
 /* Uncomment this function if you have INI entries
 static void php_pdo_informix_init_globals(zend_pdo_informix_globals *pdo_informix_globals)
 {
-		pdo_informix_globals->global_value = 0;
-		pdo_informix_globals->global_string = NULL;
+	pdo_informix_globals->global_value = 0;
+	pdo_informix_globals->global_string = NULL;
 }
 */
 /* }}} */
