@@ -14,8 +14,8 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
-  |                                                                      |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier,  |
+  | Ambrish Bhargava, Rahul Priyadarshi                                  |
   +----------------------------------------------------------------------+
 */
 
@@ -155,7 +155,6 @@ static int dbh_prepare_stmt(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *stmt_s
 			sizeof(server_info), &server_len);
 	/* making char numbers into integers eg. "10" --> 10 or "09" --> 9 */
 	stmt_res->server_ver = ((server_info[0] - '0')*100) + ((server_info[1] - '0')*10) + (server_info[3] - '0');
-
 	/*
 	 * Attach the methods...we are now live, so errors will no longer immediately
 	 * force cleanup of the stmt driver-specific storage.
@@ -253,7 +252,7 @@ static long informix_handle_doer(
 {
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 	SQLHANDLE hstmt;
-	SQLINTEGER rowCount;
+	SQLLEN rowCount;
 	/* get a statement handle */
 	int rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
 	check_dbh_error(rc, "SQLAllocHandle");
@@ -417,13 +416,12 @@ static int informix_handle_fetch_error(
 		conn_res->error_data.filename="(null)";
 		conn_res->error_data.failure_name="(null)";
 	}
-
-	sprintf(suppliment, "%s (%s[%d] at %s:%d)", conn_res->error_data.err_msg,	/*  an associated message */
+	sprintf(suppliment, "%s (%s[%d] at %s:%d)", 
+		conn_res->error_data.err_msg,		/*  an associated message */
 		conn_res->error_data.failure_name,	/*  the routine name */
 		conn_res->error_data.sqlcode,		/*  native error code of the failure */
 		conn_res->error_data.filename,		/*  source file of the reported error */
 		conn_res->error_data.lineno);		/*  location of the reported error */
-
 	/*
 	 * Now add the error information.  These need to be added
 	 * in a specific order
@@ -520,6 +518,8 @@ static int informix_handle_get_attribute(
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 	SQLINTEGER tc_flag;
 
+
+
 	switch (attr) {
 		case PDO_ATTR_CLIENT_VERSION:
 			ZVAL_STRING(return_value, PDO_INFORMIX_VERSION, 1);
@@ -530,7 +530,8 @@ static int informix_handle_get_attribute(
 			return TRUE;
 
 		case PDO_ATTR_SERVER_INFO:
-			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)value, MAX_DBMS_IDENTIFIER_NAME, NULL);
+			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, 
+					(SQLPOINTER)value, MAX_DBMS_IDENTIFIER_NAME, NULL);
 			check_dbh_error(rc, "SQLGetInfo");
 			ZVAL_STRING(return_value, value, 1);
 			return TRUE;
@@ -578,7 +579,6 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 	/* we need an environment to use for a base */
 	rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &conn_res->henv);
 	check_dbh_error(rc, "SQLAllocHandle");
-
 	/* and we're using the OBDC version 3 style interface */
 	rc = SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_ODBC_VERSION,
 			(void *) SQL_OV_ODBC3, 0);
@@ -628,7 +628,8 @@ static int dbh_connect(pdo_dbh_t *dbh, zval *driver_options TSRMLS_DC)
 				(SQLCHAR *) dbh->data_source, SQL_NTS, NULL,
 				0, NULL, SQL_DRIVER_NOPROMPT);
 		check_dbh_error(rc, "SQLDriverConnect");
-	} else {
+	} else 
+	{
 		/* Make sure each of the connection parameters is not NULL */
 		if (dbh->data_source) {
 			d_length = strlen(dbh->data_source);
@@ -724,6 +725,7 @@ static void process_pdo_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt TSRMLS_DC)
 	* if we got an error very early, we need to throw an exception rather than
 	* use the PDO error reporting.
 	*/
+
 	if (dbh->methods == NULL) {
 		zend_throw_exception_ex(php_pdo_get_exception(), 0 TSRMLS_CC,
 				"SQLSTATE=%s, %s: %d %s",
@@ -829,10 +831,10 @@ void clear_stmt_error(pdo_stmt_t *stmt)
 {
 	conn_handle *conn_res = (conn_handle *) stmt->dbh->driver_data;
 
-	conn_res->error_data.sqlcode		= 0;
-	conn_res->error_data.filename		= NULL;
-	conn_res->error_data.lineno		= 0;
-	conn_res->error_data.failure_name	= NULL;
-	conn_res->error_data.sql_state[0]	= '\0';
-	conn_res->error_data.err_msg[0]		= '\0';
+	conn_res->error_data.sqlcode			= 0;
+	conn_res->error_data.filename			= NULL;
+	conn_res->error_data.lineno				= 0;
+	conn_res->error_data.failure_name		= NULL;
+	conn_res->error_data.sql_state[0]		= '\0';
+	conn_res->error_data.err_msg[0]			= '\0';
 }

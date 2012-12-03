@@ -14,8 +14,8 @@
   | implied. See the License for the specific language governing         |
   | permissions and limitations under the License.                       |
   +----------------------------------------------------------------------+
-  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier   |
-  |                                                                      |
+  | Authors: Rick McGuire, Dan Scott, Krishna Raman, Kellen Bombardier,  |
+  | Ambrish Bhargava, Rahul Priyadarshi                                  |
   +----------------------------------------------------------------------+
 */
 
@@ -40,6 +40,7 @@
 #ifndef SQL_ATTR_GET_GENERATED_VALUE
 #define SQL_ATTR_GET_GENERATED_VALUE 2583
 #endif
+
 
 
 /* This function is called after executing a stmt for recording lastInsertId */
@@ -132,10 +133,10 @@ typedef struct {
 	SQLSMALLINT namelen;				/* length of the column name */
 	SQLSMALLINT data_type;				/* the database column type */
 	enum pdo_param_type returned_type;	/* our returned parameter type */
-	SQLUINTEGER data_size;				/* maximum size of the data  */
+	SQLULEN data_size;				/* maximum size of the data  */
 	SQLSMALLINT nullable;				/* the nullable flag */
 	SQLSMALLINT scale;					/* the scale value */
-	SQLUINTEGER out_length;				/* the transfered data length. Filled in by a fetch */
+	SQLULEN out_length;				/* the transfered data length. Filled in by a fetch */
 	column_data_value data;				/* the transferred data */
 } column_data;
 
@@ -155,11 +156,11 @@ typedef struct _stmt_handle_struct {
 /* Defines the driver_data structure for caching param data */
 typedef struct _param_node {
 	SQLSMALLINT	data_type;			/* The database data type */
-	SQLUINTEGER	param_size;			/* param size */
+	SQLULEN	param_size;			/* param size */
 	SQLSMALLINT nullable;			/* is Nullable  */
 	SQLSMALLINT	scale;				/* Decimal scale */
 	SQLSMALLINT ctype;				/* the optimal C type for transfer */
-	SQLINTEGER  transfer_length;	/* the transfer length of the parameter */
+	SQLULEN  transfer_length;	/* the transfer length of the parameter */
 } param_node;
 
 #endif

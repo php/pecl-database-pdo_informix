@@ -22,7 +22,7 @@
 #ifndef PHP_PDO_INFORMIX_H
 #define PHP_PDO_INFORMIX_H
 
-#define PDO_INFORMIX_VERSION "1.2.7"
+#define PDO_INFORMIX_VERSION "1.3.0"
 
 extern zend_module_entry pdo_informix_module_entry;
 #define phpext_pdo_informix_ptr &pdo_informix_module_entry

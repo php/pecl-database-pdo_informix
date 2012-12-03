@@ -17,22 +17,16 @@ from http://ibm.com/informix/downloads.html.
   <active>yes</active>
  </lead>
  <lead>
-  <name>Ambrish Bhargava</name>
-  <user>ambrish</user>
-  <email>abhargav@in.ibm.com</email>
-  <active>yes</active>
- </lead>
- <lead>
   <name>IBM OpenDev</name>
   <user>kfbombar</user>
   <email>opendev@us.ibm.com</email>
   <active>yes</active>
  </lead>
- <date>2012-03-12</date>
- <time>16:54:23</time>
+ <date>2012-12-03</date>
+ <time>23:00:23</time>
  <version>
-  <release>1.2.7</release>
-  <api>1.2.7</api>
+  <release>1.3.0</release>
+  <api>1.3.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -40,8 +34,7 @@ from http://ibm.com/informix/downloads.html.
  </stability>
  <license>Apache License 2.0</license>
  <notes>
-  Fixed: Problem related to dynamic loading
-  Fixed: Compilation error with php-5.4.x
+  Fixed: PDO:query function gives segfault when pdo_informix build with CFLAGS -m64
  </notes>
  <contents>
   <dir name="/">

@@ -41,7 +41,7 @@ struct lob_stream_data
 
 size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 {
-	SQLINTEGER readBytes = 0;
+	SQLLEN readBytes = 0;
 	struct lob_stream_data *data = stream->abstract;
 	column_data *col_res = &data->stmt_res->columns[data->colno];
 	stmt_handle *stmt_res = data->stmt_res;
@@ -600,7 +600,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 	column_data *col_res;
 	struct pdo_column_data *col;
 	int rc;
-	int in_length = 1;
+	SQLLEN in_length = 1;
 	stmt_res = (stmt_handle *) stmt->driver_data;
 	col_res = &stmt_res->columns[colno];
 	col = &stmt->columns[colno];
@@ -662,7 +662,7 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 			rc = SQLBindCol((SQLHSTMT) stmt_res->hstmt,
 					(SQLUSMALLINT) (colno + 1), SQL_C_CHAR,
 					col_res->data.str_val, in_length,
-					(SQLINTEGER *) (&col_res->out_length));
+					(SQLLEN *) (&col_res->out_length));
 			col_res->returned_type = PDO_PARAM_STR;
 			col->param_type = PDO_PARAM_STR;
 	}
@@ -729,7 +729,7 @@ static int informix_stmt_executer( pdo_stmt_t * stmt TSRMLS_DC)
 {
 	stmt_handle *stmt_res = (stmt_handle *) stmt->driver_data;
 	int rc = 0;
-	SQLINTEGER rowCount;
+	SQLLEN rowCount;
 
 	/*
 	* If this statement has already been executed, then we need to
