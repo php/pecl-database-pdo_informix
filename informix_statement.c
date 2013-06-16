@@ -1082,8 +1082,19 @@ static int informix_stmt_get_col(
 	/* string type...very common */
 	else if (col_res->returned_type == PDO_PARAM_STR) {
 		/* set the info */
-		*ptr = col_res->data.str_val;
-		*len = col_res->out_length;
+        switch(col_res->data_type) {
+            case SQL_INTEGER:
+            case SQL_SMALLINT:
+            case SQL_INFX_BIGINT:
+                if (col_res->out_length > 20) {
+                    *ptr = NULL;
+                    *len = 0;
+                    break;
+                }
+            default:
+                *ptr = col_res->data.str_val;
+                *len = col_res->out_length;
+        }
 	} else {
 	/* binary numeric form */
 		*ptr = (char *) &col_res->data.l_val;

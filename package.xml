@@ -22,11 +22,11 @@ from http://ibm.com/informix/downloads.html.
   <email>opendev@us.ibm.com</email>
   <active>yes</active>
  </lead>
- <date>2012-12-03</date>
- <time>23:00:23</time>
+ <date>2013-06-16</date>
+ <time>20:00:00</time>
  <version>
-  <release>1.3.0</release>
-  <api>1.3.0</api>
+  <release>1.3.1</release>
+  <api>1.3.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -34,7 +34,7 @@ from http://ibm.com/informix/downloads.html.
  </stability>
  <license>Apache License 2.0</license>
  <notes>
-  Fixed: PDO:query function gives segfault when pdo_informix build with CFLAGS -m64
+  Fixed: Segmentation fault while fetching null value for Integer Field in specific case
  </notes>
  <contents>
   <dir name="/">
