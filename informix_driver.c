@@ -541,7 +541,28 @@ static int informix_handle_get_attribute(
 	return FALSE;
 }
 
+static int informix_handle_check_liveness(
+		pdo_dbh_t *dbh
+		TSRMLS_DC)
+{
+	int rc;
+	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
+	SQLHANDLE *hstmt = (SQLHANDLE *) emalloc(sizeof(SQLHANDLE));
 
+	rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, hstmt);
+	if(rc != SQL_SUCCESS) { 
+		efree(hstmt);
+		return FAILURE;
+	}
+
+	rc = SQLPrepare(hstmt, "SELECT today FROM systables WHERE tabid = 1", SQL_NTS);
+	efree(hstmt);
+	if(rc != SQL_SUCCESS) {
+		return FAILURE;
+	}
+	/* return the state from the query */
+	return SUCCESS;
+}
 static struct pdo_dbh_methods informix_dbh_methods = {
 	informix_handle_closer,
 	informix_handle_preparer,
@@ -554,7 +575,7 @@ static struct pdo_dbh_methods informix_dbh_methods = {
 	informix_handle_lastInsertID,
 	informix_handle_fetch_error,
 	informix_handle_get_attribute,
-	NULL,				/* check_liveness  */
+	informix_handle_check_liveness,	/* check_liveness  */
 	NULL				/* get_driver_methods */
 };
 
