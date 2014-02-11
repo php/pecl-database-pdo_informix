@@ -579,7 +579,7 @@ static int stmt_parameter_post_execute(pdo_stmt_t *stmt, struct pdo_bound_param_
 	* locations, so we need to update the PHP control blocks so that the
 	* data is processed correctly.
 	*/
-	if (Z_TYPE_P(curr->parameter) == IS_STRING) {
+	if ((param_res != NULL) && (Z_TYPE_P(curr->parameter) == IS_STRING)) {
 		if (param_res->transfer_length < 0 || param_res->transfer_length == SQL_NULL_DATA) {
 			Z_STRLEN_P(curr->parameter) = 0;
 			Z_STRVAL_P(curr->parameter)[0] = '\0';
