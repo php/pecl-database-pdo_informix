@@ -545,9 +545,10 @@ static int informix_handle_check_liveness(
 		pdo_dbh_t *dbh
 		TSRMLS_DC)
 {
-	int rc;
+	int rc = SQL_ERROR;
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
 	SQLHANDLE *hstmt = (SQLHANDLE *) emalloc(sizeof(SQLHANDLE));
+	check_allocation(hstmt, "informix_handle_check_liveness", "Unable to allocate statement handle");
 
 	rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, hstmt);
 	if(rc != SQL_SUCCESS) { 
