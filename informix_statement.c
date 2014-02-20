@@ -653,7 +653,13 @@ static int stmt_bind_column(pdo_stmt_t *stmt, int colno TSRMLS_DC)
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
 		default:
-			in_length = col_res->data_size + in_length;
+			if( col_res->data_type == SQL_CHAR || col_res->data_type == SQL_VARCHAR ){
+				/* Multiply the size by 4 to handle cases where client and server code pages are different.
+				* 4 bytes should be able to cover any codeset character known*/
+				in_length = col_res->data_size * 4 + in_length;
+			} else {
+				in_length = col_res->data_size + in_length;
+			}
 			col_res->data.str_val = (char *) emalloc(in_length+1);
 			check_stmt_allocation(col_res->data.str_val,
 					"stmt_bind_column",
