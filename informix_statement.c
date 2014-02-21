@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | (C) Copyright IBM Corporation 2006.                                  |
+  | (C) Copyright IBM Corporation 2006-2014.                                  |
   +----------------------------------------------------------------------+
   |                                                                      |
   | Licensed under the Apache License, Version 2.0 (the "License"); you  |
@@ -66,7 +66,7 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 	rc = SQLGetData(stmt_res->hstmt, data->colno + 1, ctype, buf, count, &readBytes);
 	check_stmt_error(rc, "SQLGetData");
 
-	if (readBytes == -1) {	/*For NULL CLOB/BLOB values */
+	if (readBytes == SQL_NULL_DATA) {	/*For NULL CLOB/BLOB values */
 		return (size_t) readBytes;
 	}
 	if (readBytes > count) {
@@ -113,6 +113,7 @@ php_stream* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int co
 	struct lob_stream_data *data;
 	column_data *col_res;
 	php_stream *retval;
+	char buff[] = "";
 
 	data = emalloc(sizeof(struct lob_stream_data));
 	data->stmt_res = stmt_res;
@@ -121,7 +122,7 @@ php_stream* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int co
 	col_res = &data->stmt_res->columns[data->colno];
 	retval = (php_stream *) php_stream_alloc(&lob_stream_ops, data, NULL, "r");
 	/* Find out if the column contains NULL data */
-	if (lob_stream_read(retval, NULL, 0 TSRMLS_CC) == SQL_NULL_DATA) {
+	if (lob_stream_read(retval, buff, 0 TSRMLS_CC) == SQL_NULL_DATA) {
 		php_stream_close(retval);
 		return NULL;
 	} else
