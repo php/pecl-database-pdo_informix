@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | (C) Copyright IBM Corporation 2006.                                  |
+  | (C) Copyright IBM Corporation 2006-2014.                             |
   +----------------------------------------------------------------------+
   |                                                                      |
   | Licensed under the Apache License, Version 2.0 (the "License"); you  |
@@ -547,17 +547,17 @@ static int informix_handle_check_liveness(
 {
 	int rc = SQL_ERROR;
 	conn_handle *conn_res = (conn_handle *) dbh->driver_data;
-	SQLHANDLE *hstmt = (SQLHANDLE *) emalloc(sizeof(SQLHANDLE));
+	SQLHANDLE hstmt;
 	check_allocation(hstmt, "informix_handle_check_liveness", "Unable to allocate statement handle");
 
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, hstmt);
+	rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &hstmt);
 	if(rc != SQL_SUCCESS) { 
 		efree(hstmt);
 		return FAILURE;
 	}
 
 	rc = SQLPrepare(hstmt, "SELECT today FROM systables WHERE tabid = 1", SQL_NTS);
-	efree(hstmt);
+	SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 	if(rc != SQL_SUCCESS) {
 		return FAILURE;
 	}
