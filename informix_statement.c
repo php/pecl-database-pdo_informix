@@ -49,6 +49,10 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 	int ctype = 0;
 	SQLRETURN rc = 0;
 
+	if (stream->eof == 1) {
+		return (size_t)-1;
+	}
+
 	switch (col_res->data_type) {
 		default:
 		case SQL_LONGVARCHAR:
@@ -66,15 +70,21 @@ size_t lob_stream_read(php_stream *stream, char *buf, size_t count TSRMLS_DC)
 	rc = SQLGetData(stmt_res->hstmt, data->colno + 1, ctype, buf, count, &readBytes);
 	check_stmt_error(rc, "SQLGetData");
 
+	if (rc == SQL_NO_DATA) {	/*Already returned all of the data for the column*/
+		return (size_t)-1;
+	}
+
 	if (readBytes == SQL_NULL_DATA) {	/*For NULL CLOB/BLOB values */
 		return (size_t) readBytes;
 	}
 	if (readBytes > count) {
-		if (col_res->data_type == SQL_LONGVARCHAR) {  /*Dont return the NULL at end of CLOB buffer */
+		if ((col_res->data_type == SQL_LONGVARCHAR) && (count != 0)) {  /*Dont return the NULL at end of CLOB buffer */
 			readBytes = count - 1;
 		} else {
 			readBytes = count;
 		}
+	} else if (count > readBytes) {
+		stream->eof = 1;
 	}
 	return (size_t) readBytes;
 }
@@ -113,7 +123,7 @@ php_stream* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int co
 	struct lob_stream_data *data;
 	column_data *col_res;
 	php_stream *retval;
-	char buff[] = "";
+	char buf[1];
 
 	data = emalloc(sizeof(struct lob_stream_data));
 	data->stmt_res = stmt_res;
@@ -122,7 +132,7 @@ php_stream* create_lob_stream( pdo_stmt_t *stmt , stmt_handle *stmt_res , int co
 	col_res = &data->stmt_res->columns[data->colno];
 	retval = (php_stream *) php_stream_alloc(&lob_stream_ops, data, NULL, "r");
 	/* Find out if the column contains NULL data */
-	if (lob_stream_read(retval, buff, 0 TSRMLS_CC) == SQL_NULL_DATA) {
+	if (lob_stream_read(retval, buf, 0 TSRMLS_CC) == SQL_NULL_DATA) {
 		php_stream_close(retval);
 		return NULL;
 	} else
