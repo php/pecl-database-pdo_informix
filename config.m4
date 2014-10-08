@@ -33,10 +33,10 @@ if test "$PHP_PDO_INFORMIX" != "no"; then
  
   if test -d "$INFORMIXDIR"; then
     if test ! -d "$INFORMIXDIR/incl/cli"; then
-       AC_MSG_ERROR([Cannot find Informix Client SDK includes in $INFORMIXDIR/inc/cli])
+       AC_MSG_ERROR([Cannot find Informix Client SDK includes in $INFORMIXDIR/incl/cli])
     fi  
     if test ! -d "$INFORMIXDIR/incl/esql"; then
-       AC_MSG_ERROR([Cannot find ESQL/C includes in $INFORMIXDIR/inc/esql])
+       AC_MSG_ERROR([Cannot find ESQL/C includes in $INFORMIXDIR/incl/esql])
     fi  
     if test ! -d "$INFORMIXDIR/$PHP_LIBDIR"; then
        AC_MSG_ERROR([Cannot find Informix libraries in $INFORMIXDIR/$PHP_LIBDIR])
