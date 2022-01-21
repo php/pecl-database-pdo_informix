@@ -21,6 +21,8 @@ if test "$PHP_PDO_INFORMIX" != "no"; then
     pdo_inc_path=$abs_srcdir/ext
   elif test -f $prefix/include/php/ext/pdo/php_pdo_driver.h; then
     pdo_inc_path=$prefix/include/php/ext
+  elif test -f $phpincludedir/ext/pdo/php_pdo_driver.h; then
+    pdo_inc_path=$phpincludedir/ext
   else
     AC_MSG_ERROR([Cannot find php_pdo_driver.h.])
   fi

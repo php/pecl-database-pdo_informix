@@ -38,7 +38,7 @@ pdo_informix: Insert/select clob/blob columns with binding to local variable or 
 
 			$res = $this->db->exec( "DELETE FROM animals" );
 
-			print "inserting from php file stream\n";
+			print "inserting from php file stream \n";
 			$fp1 = fopen( dirname(__FILE__) . "/clob.dat" , "rb" );
 			$fp2 = fopen( dirname(__FILE__) . "/spook.png" , "rb" );
 			$stmt = $this->db->prepare('insert into animals (id,my_clob,my_blob) values (:id,:my_clob,:my_blob)');

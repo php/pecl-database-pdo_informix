@@ -22,7 +22,7 @@
 #ifndef PHP_PDO_INFORMIX_H
 #define PHP_PDO_INFORMIX_H
 
-#define PDO_INFORMIX_VERSION "1.3.1"
+#define PDO_INFORMIX_VERSION "1.3.5"
 
 extern zend_module_entry pdo_informix_module_entry;
 #define phpext_pdo_informix_ptr &pdo_informix_module_entry
@@ -43,7 +43,7 @@ PHP_RINIT_FUNCTION(pdo_informix);
 PHP_RSHUTDOWN_FUNCTION(pdo_informix);
 PHP_MINFO_FUNCTION(pdo_informix);
 
-PHP_FUNCTION(confirm_pdo_informix_compiled);	/* For testing, remove later. */
+/*PHP_FUNCTION(confirm_pdo_informix_compiled);*/	/* For testing, remove later. */
 
 /* 
 	Declare any global variables you may need between the BEGIN

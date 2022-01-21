@@ -10,7 +10,7 @@ pdo_informix: commit with autocommit off
 		public function __construct()
 		{
 			parent::__construct();
-			$this->dsn .= ";OptimizeAutoCommit=0;";
+			$this->dsn = "informix:dsn=idsn;OptimizeAutoCommit=0;";
 		}
 
 		public function runTest()

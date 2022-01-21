@@ -24,6 +24,16 @@
 
 #include "infxcli.h"
 
+#if PHP_MAJOR_VERSION > 7 || (PHP_MAJOR_VERSION == 7 && PHP_MINOR_VERSION >= 4)
+#define PHP_7_4_OR_HIGHER 1
+#else
+#define PHP_7_4_OR_HIGHER 0
+#endif
+#if PHP_MAJOR_VERSION > 8 || (PHP_MAJOR_VERSION == 8 && PHP_MINOR_VERSION >= 1)
+#define PHP_8_1_OR_HIGHER 1
+#else
+#define PHP_8_1_OR_HIGHER 0
+#endif
 
 #define MAX_OPTION_LEN 10
 #define MAX_ERR_MSG_LEN (SQL_MAX_MESSAGE_LENGTH + SQL_SQLSTATE_SIZE + 1)
@@ -41,24 +51,24 @@
 #define SQL_ATTR_GET_GENERATED_VALUE 2583
 #endif
 
-
+#define MAX_ISAM_ERROR_MSG_LEN MAX_ERR_MSG_LEN
 
 /* This function is called after executing a stmt for recording lastInsertId */
-int record_last_insert_id( pdo_dbh_t *dbh, SQLHANDLE hstmt TSRMLS_DC);
+int record_last_insert_id( pdo_dbh_t *dbh, SQLHANDLE hstmt );
 
 
 /* error handling functions and macros. */
-void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle, SQLSMALLINT hType, char *tag, char *file, int line TSRMLS_DC);
-void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *tag, char *message, char *file, int line TSRMLS_DC);
-void raise_dbh_error(pdo_dbh_t *dbh, char *tag, char *file, int line TSRMLS_DC);
-void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line TSRMLS_DC);
+void raise_sql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, SQLHANDLE handle, SQLSMALLINT hType, char *tag, char *file, int line );
+void raise_informix_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char *state, char *tag, char *message, char *file, int line );
+void raise_dbh_error(pdo_dbh_t *dbh, char *tag, char *file, int line );
+void raise_stmt_error(pdo_stmt_t *stmt, char *tag, char *file, int line );
 void clear_stmt_error(pdo_stmt_t *stmt);
-int informix_stmt_dtor(pdo_stmt_t *stmt TSRMLS_DC);
+int informix_stmt_dtor(pdo_stmt_t *stmt );
 
-#define RAISE_DBH_ERROR(tag) raise_dbh_error(dbh, tag, __FILE__, __LINE__ TSRMLS_CC)
-#define RAISE_STMT_ERROR(tag) raise_stmt_error(stmt, tag, __FILE__, __LINE__ TSRMLS_CC)
-#define RAISE_INFORMIX_STMT_ERROR(state, tag, msg) raise_informix_error(stmt->dbh, stmt, state, tag, msg, __FILE__, __LINE__ TSRMLS_CC)
-#define RAISE_INFORMIX_DBH_ERROR(state, tag, msg) raise_informix_error(dbh, NULL, state, tag, msg, __FILE__, __LINE__ TSRMLS_CC)
+#define RAISE_DBH_ERROR(tag) raise_dbh_error(dbh, tag, __FILE__, __LINE__ )
+#define RAISE_STMT_ERROR(tag) raise_stmt_error(stmt, tag, __FILE__, __LINE__ )
+#define RAISE_INFORMIX_STMT_ERROR(state, tag, msg) raise_informix_error(stmt->dbh, stmt, state, tag, msg, __FILE__, __LINE__ )
+#define RAISE_INFORMIX_DBH_ERROR(state, tag, msg) raise_informix_error(dbh, NULL, state, tag, msg, __FILE__, __LINE__ )
 
 /* check for an SQL error in the context of an 
    PDO method execution. */
@@ -111,6 +121,7 @@ typedef struct _conn_error_data {
 	char *failure_name;							/* the failure tag. */
 	SQLCHAR sql_state[8];						/* SQLSTATE code */
 	char err_msg[SQL_MAX_MESSAGE_LENGTH + 1];	/* error message associated with failure */
+        SQLINTEGER isam_err;
 } conn_error_data;
 
 typedef struct _conn_handle_struct {
@@ -129,7 +140,11 @@ typedef union {
 /* local descriptor for column data.  These mirror the
    descriptors given back to the PDO driver. */
 typedef struct {
+#if PHP_MAJOR_VERSION >= 7
+        zend_string *name;
+#else
 	char *name;							/* the column name */
+#endif
 	SQLSMALLINT namelen;				/* length of the column name */
 	SQLSMALLINT data_type;				/* the database column type */
 	enum pdo_param_type returned_type;	/* our returned parameter type */
@@ -143,10 +158,25 @@ typedef struct {
 /* size of the buffer used to read LOB streams */
 #define LOB_BUFFER_SIZE 8192
 
+/*
+ * PHP 8.1 changes many functions to be bool instead of int
+ */
+#if PHP_8_1_OR_HIGHER
+#define STATUS_RETURN_TYPE bool
+#define NO_STATUS_RETURN_TYPE void
+#else
+#define STATUS_RETURN_TYPE int
+#define NO_STATUS_RETURN_TYPE int
+#endif
+
 typedef struct _stmt_handle_struct {
 	SQLHANDLE hstmt;					/* the statement handle associated with the stmt */
 	int executing;						/* an executing state flag for error cleanup */
+#if PHP_8_1_OR_HIGHER
+	zend_string *converted_statement;			/* temporary version of the statement with parameter replacement */
+#else
 	char *converted_statement;			/* temporary version of the statement with parameter replacement */
+#endif
 	char *lob_buffer;					/* buffer used for reading in LOB parameters */
 	column_data *columns;				/* the column descriptors */
 	enum pdo_cursor_type cursor_type;	/* the type of cursor we support. */
@@ -160,7 +190,7 @@ typedef struct _param_node {
 	SQLSMALLINT nullable;			/* is Nullable  */
 	SQLSMALLINT	scale;				/* Decimal scale */
 	SQLSMALLINT ctype;				/* the optimal C type for transfer */
-	SQLULEN  transfer_length;	/* the transfer length of the parameter */
+	SQLLEN  transfer_length;	/* the transfer length of the parameter */
 } param_node;
 
 #endif
