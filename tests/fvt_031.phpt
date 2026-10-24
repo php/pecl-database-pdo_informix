@@ -10,7 +10,7 @@ pdo_informix: Tests all Fetch orientations
 		public function __construct()
 		{
 			parent::__construct();
-			$this->dsn .= ";EnableScrollableCursors=1;";
+			$this->dsn = "informix:dsn=idsn;EnableScrollableCursors=1;";
 		}
 		public function runTest()
 		{
