@@ -44,10 +44,10 @@ extern pdo_driver_t pdo_informix_driver;	/* the registration table */
  */
 zend_function_entry pdo_informix_functions[] =
 {
-	PHP_FE(confirm_pdo_informix_compiled, NULL)	/* For testing, remove later. */
-	{
-		NULL, NULL, NULL
-	}	/* Must be the last line in pdo_informix_functions[] */
+//	PHP_FE(confirm_pdo_informix_compiled, NULL)	/* For testing, remove later. */
+//	{
+//		NULL, NULL, NULL
+//	}	/* Must be the last line in pdo_informix_functions[] */
 };
 /* }}} */
 
@@ -177,18 +177,22 @@ PHP_MINFO_FUNCTION(pdo_informix)
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_pdo_informix_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_pdo_informix_compiled)
+/*PHP_FUNCTION(confirm_pdo_informix_compiled)
 {
 	char *arg = NULL;
 	int arg_len, len;
 	char string[256];
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FALSE)
+	if (zend_parse_parameters(ZEND_NUM_ARGS() , "s", &arg, &arg_len) == FALSE)
 	{
 		return;
 	}
 
 	len = sprintf(string, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "pdo_informix", arg);
+#if PHP_MAJOR_VERSION >= 7
+	RETURN_STRINGL(string, len);
+#else
 	RETURN_STRINGL(string, len, 1);
-}
+#endif
+}*/
 /* }}} */

@@ -21,6 +21,8 @@ if test "$PHP_PDO_INFORMIX" != "no"; then
     pdo_inc_path=$abs_srcdir/ext
   elif test -f $prefix/include/php/ext/pdo/php_pdo_driver.h; then
     pdo_inc_path=$prefix/include/php/ext
+  elif test -f $phpincludedir/ext/pdo/php_pdo_driver.h; then
+    pdo_inc_path=$phpincludedir/ext
   else
     AC_MSG_ERROR([Cannot find php_pdo_driver.h.])
   fi
@@ -95,8 +97,13 @@ dnl    IFX_ESQL_FLAGS="$IFX_ESQL_FLAGS -EUHAVE_IFX_IUS"
 
   PHP_ADD_MAKEFILE_FRAGMENT
 
-  PHP_ADD_LIBRARY_DEFER(ifcli, 1, PDO_INFORMIX_SHARED_LIBADD)
-  PHP_ADD_LIBRARY_DEFER(ifdmr, 1, PDO_INFORMIX_SHARED_LIBADD)
+  if test ! -f "$INFORMIXDIR/lib/cli/libifcli15a.so"; then
+     PHP_ADD_LIBRARY_DEFER(ifcli, 1, PDO_INFORMIX_SHARED_LIBADD)
+     PHP_ADD_LIBRARY_DEFER(ifdmr, 1, PDO_INFORMIX_SHARED_LIBADD)
+  else
+     PHP_ADD_LIBRARY_DEFER(ifcli15a, 1, PDO_INFORMIX_SHARED_LIBADD)
+     PHP_ADD_LIBRARY_DEFER(ifdmr15a, 1, PDO_INFORMIX_SHARED_LIBADD)
+  fi   
   
 
   for i in $IFX_LIBS; do
